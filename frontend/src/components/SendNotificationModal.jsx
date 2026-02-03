@@ -41,46 +41,32 @@ const SendNotificationModal = ({ open, onClose, onSuccess, user }) => {
     setError(null);
 
     try {
-      let response;
-      
-      // Role-based authorization
+      const notificationData = {
+        title: formData.title,
+        message: formData.message,
+        priority: formData.priority,
+        type: 'info'
+      };
+
       if (user?.role === 'driver') {
-        // Drivers send targeted notifications to their students and copy to admin
-        response = await notificationService.sendTargetedNotification({
-          title: formData.title,
-          message: formData.message,
-          priority: formData.priority,
-          targetType: formData.recipientType // 'students' or 'admin'
-        });
+        notificationData.targetType = 'role';
+        notificationData.targetRole = formData.recipientType === 'students' ? 'student' : 'admin';
       } else {
-        // Admins can send to all types
         if (formData.recipientType === 'all') {
-          response = await notificationService.broadcastNotification({
-            title: formData.title,
-            message: formData.message,
-            priority: formData.priority,
-            targetRoles: ['admin', 'driver', 'student']
-          });
+          notificationData.targetType = 'all';
         } else {
-          // Map frontend values to backend enum values
+          notificationData.targetType = 'role';
           const roleMapping = {
             'students': 'student',
             'drivers': 'driver',
             'admins': 'admin',
             'admin': 'admin'
           };
-          
-          const backendRole = roleMapping[formData.recipientType] || formData.recipientType;
-          
-          response = await notificationService.createNotification({
-            title: formData.title,
-            message: formData.message,
-            priority: formData.priority,
-            receiverRole: backendRole,
-            receiverId: null // Broadcast to role
-          });
+          notificationData.targetRole = roleMapping[formData.recipientType] || formData.recipientType;
         }
       }
+
+      const response = await notificationService.sendNotification(notificationData);
 
       if (onSuccess) {
         onSuccess(response.data);

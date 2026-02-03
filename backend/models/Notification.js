@@ -38,9 +38,7 @@ const notificationSchema = new mongoose.Schema({
   receiverId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: function() {
-      return this.receiverRole !== 'all';
-    }
+    default: null
   },
   isRead: {
     type: Boolean,

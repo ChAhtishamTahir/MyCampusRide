@@ -6,9 +6,7 @@ export const notificationService = {
   getNotification: (id) => makeApiRequest(() => api.get(`/api/notifications/${id}`)),
   markAsRead: (id) => makeApiRequest(() => api.put(`/api/notifications/${id}/read`)),
   markAllAsRead: () => makeApiRequest(() => api.put('/api/notifications/mark-all-read')),
-  createNotification: (data) => makeApiRequest(() => api.post('/api/notifications', data)),
+  sendNotification: (data) => makeApiRequest(() => api.post('/api/notifications', data)),
   deleteNotification: (id) => makeApiRequest(() => api.delete(`/api/notifications/${id}`)),
   getNotificationStats: () => makeApiRequest(() => api.get('/api/notifications/stats')),
-  broadcastNotification: (data) => makeApiRequest(() => api.post('/api/notifications/broadcast', data)),
-  sendTargetedNotification: (data) => makeApiRequest(() => api.post('/api/notifications/targeted', data)),
 };
