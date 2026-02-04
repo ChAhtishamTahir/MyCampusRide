@@ -5,11 +5,9 @@ const {
   getNotification,
   markAsRead,
   markAllAsRead,
-  createNotification,
+  sendNotification,
   deleteNotification,
-  getNotificationStats,
-  broadcastNotification,
-  sendTargetedNotification
+  getNotificationStats
 } = require('../controllers/notificationController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { adminOnly, adminOrDriver } = require('../middleware/roleMiddleware');
@@ -25,12 +23,8 @@ router.put('/:id/read', markAsRead);
 router.put('/mark-all-read', markAllAsRead);
 router.delete('/:id', deleteNotification);
 
-// Admin and Driver routes
-router.post('/', adminOrDriver, createNotification);
-router.post('/targeted', adminOrDriver, sendTargetedNotification);
-
-// Admin only routes
-router.post('/broadcast', adminOnly, broadcastNotification);
+// Send notification route (admin or driver)
+router.post('/', adminOrDriver, sendNotification);
 
 module.exports = router;
 

@@ -50,19 +50,29 @@ const NotificationsView = () => {
 
   const handleSubmit = async () => {
     try {
-      // Convert receiverRole to targetRoles array for broadcast
-      const broadcastData = {
+      if (!formData.title || !formData.message) {
+        showSnack('Title and message are required', 'error');
+        return;
+      }
+
+      let notificationData = {
         title: formData.title,
         message: formData.message,
-        type: formData.type,
-        priority: formData.priority || 'medium',
-        targetRoles: [formData.receiverRole] // Keep it as array with single role (including 'all')
+        type: formData.type || 'info',
+        priority: formData.priority || 'medium'
       };
-      
-      await notificationService.broadcastNotification(broadcastData);
-      showSnack('Notification sent');
+
+      if (formData.receiverRole === 'all') {
+        notificationData.targetType = 'all';
+      } else {
+        notificationData.targetType = 'role';
+        notificationData.targetRole = formData.receiverRole;
+      }
+
+      await notificationService.sendNotification(notificationData);
+      showSnack('Notification sent successfully');
       closeDialog();
-      loadData(); // Reload data
+      loadData();
     } catch (error) {
       console.error('Error sending notification:', error);
       showSnack('Failed to send notification', 'error');

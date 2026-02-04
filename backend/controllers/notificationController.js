@@ -3,15 +3,11 @@ const User = require('../models/User');
 const Bus = require('../models/Bus');
 const { asyncHandler } = require('../middleware/errorHandler');
 
-// @desc    Get user notifications
-// @route   GET /api/notifications
-// @access  Private
 const getNotifications = asyncHandler(async (req, res) => {
   const { isRead, type, priority, page = 1, limit = 20 } = req.query;
   const userId = req.user._id;
   const userRole = req.user.role;
 
-  // Build filter object
   const filter = {
     $or: [
       { receiverId: userId },
@@ -19,32 +15,21 @@ const getNotifications = asyncHandler(async (req, res) => {
       { receiverRole: 'all' }
     ]
   };
-  
-  // For admin users, also include notifications intended for admins
-  if (userRole === 'admin') {
-    filter.$or.push({
-      'metadata.intendedRole': 'admin'
-    });
-  }
 
   if (isRead !== undefined) filter.isRead = isRead === 'true';
   if (type) filter.type = type;
   if (priority) filter.priority = priority;
 
-  // Calculate pagination
   const skip = (page - 1) * limit;
 
-  // Get notifications with pagination
   const notifications = await Notification.find(filter)
     .populate('senderId', 'name email role')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(parseInt(limit));
 
-  // Get total count
   const total = await Notification.countDocuments(filter);
 
-  // Get unread count
   const unreadCount = await Notification.countDocuments({
     ...filter,
     isRead: false
@@ -62,9 +47,6 @@ const getNotifications = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get single notification
-// @route   GET /api/notifications/:id
-// @access  Private
 const getNotification = asyncHandler(async (req, res) => {
   const notification = await Notification.findById(req.params.id)
     .populate('senderId', 'name email role');
@@ -76,15 +58,13 @@ const getNotification = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if user has access to this notification
   const userId = req.user._id;
   const userRole = req.user.role;
-  
-  const hasAccess = 
-    notification.receiverId && notification.receiverId.toString() === userId.toString() ||
+
+  const hasAccess =
+    (notification.receiverId && notification.receiverId.toString() === userId.toString()) ||
     notification.receiverRole === userRole ||
-    notification.receiverRole === 'all' ||
-    (userRole === 'admin' && notification.metadata?.intendedRole === 'admin');
+    notification.receiverRole === 'all';
 
   if (!hasAccess) {
     return res.status(403).json({
@@ -99,9 +79,6 @@ const getNotification = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Mark notification as read
-// @route   PUT /api/notifications/:id/read
-// @access  Private
 const markAsRead = asyncHandler(async (req, res) => {
   const notification = await Notification.findById(req.params.id);
 
@@ -112,15 +89,13 @@ const markAsRead = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if user has access to this notification
   const userId = req.user._id;
   const userRole = req.user.role;
-  
-  const hasAccess = 
-    notification.receiverId && notification.receiverId.toString() === userId.toString() ||
+
+  const hasAccess =
+    (notification.receiverId && notification.receiverId.toString() === userId.toString()) ||
     notification.receiverRole === userRole ||
-    notification.receiverRole === 'all' ||
-    (userRole === 'admin' && notification.metadata?.intendedRole === 'admin');
+    notification.receiverRole === 'all';
 
   if (!hasAccess) {
     return res.status(403).json({
@@ -129,7 +104,6 @@ const markAsRead = asyncHandler(async (req, res) => {
     });
   }
 
-  // Mark as read
   await notification.markAsRead();
 
   res.json({
@@ -139,9 +113,6 @@ const markAsRead = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Mark all notifications as read
-// @route   PUT /api/notifications/mark-all-read
-// @access  Private
 const markAllAsRead = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
@@ -153,13 +124,6 @@ const markAllAsRead = asyncHandler(async (req, res) => {
       { receiverRole: 'all' }
     ],
     isRead: false
-  };
-  
-  // For admin users, also include notifications intended for admins
-  if (userRole === 'admin') {
-    filter.$or.push({
-      'metadata.intendedRole': 'admin'
-    });
   };
 
   const result = await Notification.updateMany(filter, {
@@ -173,152 +137,118 @@ const markAllAsRead = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Create notification (Admin/Driver only)
-// @route   POST /api/notifications
-// @access  Private/Admin/Driver
-const sendTargetedNotification = asyncHandler(async (req, res) => {
-  console.log('=== TARGETED NOTIFICATION CONTROLLER CALLED ===');
-  console.log('Request body:', req.body);
-  console.log('User:', req.user);
-  
-  const { title, message, type, priority, targetType } = req.body;
-  
-  const senderId = req.user._id;
-  const senderRole = req.user.role;
-  
-  console.log('Target type:', targetType);
-  console.log('Sender role:', senderRole);
-  
-  // Only drivers can use targeted notifications
-  if (senderRole !== 'driver') {
-    return res.status(403).json({
-      success: false,
-      message: 'Only drivers can send targeted notifications'
-    });
-  }
-  
-  // Validate target type
-  if (!['students', 'admin'].includes(targetType)) {
+const sendNotification = asyncHandler(async (req, res) => {
+  const { title, message, type, priority, targetType, targetRole, receiverId } = req.body;
+
+  if (!title || !message) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid target type. Must be "students" or "admin"'
+      message: 'Title and message are required'
     });
   }
-  
+
+  if (!targetType) {
+    return res.status(400).json({
+      success: false,
+      message: 'Target type is required (individual, role, or all)'
+    });
+  }
+
+  const senderId = req.user._id;
+  const senderRole = req.user.role;
+
+  const notifications = [];
+
   try {
-    const notifications = [];
-    
-    if (targetType === 'students') {
-      // Find driver's assigned bus
-      const bus = await Bus.findOne({ driverId: senderId }).populate('routeId');
-      
-      if (!bus) {
-        return res.status(404).json({
+    if (targetType === 'individual') {
+      if (!receiverId) {
+        return res.status(400).json({
           success: false,
-          message: 'No bus assigned to you'
+          message: 'Receiver ID is required for individual notifications'
         });
       }
-      
-      // Find students assigned to this bus/route
-      const students = await User.find({
-        role: 'student',
-        assignedBus: bus._id
-      });
-      
-      console.log(`Found ${students.length} students for bus ${bus.busNumber}`);
-      
-      // Create individual notifications for each student
-      for (const student of students) {
-        console.log(`Creating notification for student:`, student._id, student.name);
-        
-        const notificationData = {
-          title,
-          message,
-          type: type || 'info',
-          senderRole,
-          senderId,
-          receiverRole: 'student',
-          receiverId: student._id,
-          priority: priority || 'medium',
-          relatedEntity: {
-            type: 'bus',
-            id: bus._id
-          },
-          metadata: {
-            busNumber: bus.busNumber,
-            routeName: bus.routeId?.routeName || 'Unknown Route'
-          }
-        };
-        
-        console.log('Notification data:', notificationData);
-        
-        try {
-          const notification = await Notification.create(notificationData);
-          notifications.push(notification);
-          console.log('Successfully created notification:', notification._id);
-        } catch (createError) {
-          console.error('Error creating notification for student:', student._id, createError);
-          throw createError;
-        }
+
+      const receiver = await User.findById(receiverId);
+      if (!receiver) {
+        return res.status(404).json({
+          success: false,
+          message: 'Receiver not found'
+        });
       }
-      
-      // Also send a copy to admin
-      const adminNotification = await Notification.create({
-        title: `[Driver: ${req.user.name}] ${title}`,
-        message: `To students on bus ${bus.busNumber}: ${message}`,
-        type: 'info',
-        senderRole: 'driver',
-        senderId,
-        receiverRole: 'all', // Use 'all' so we can set receiverId to null
-        receiverId: null,
-        priority: priority || 'medium',
-        relatedEntity: {
-          type: 'bus',
-          id: bus._id
-        },
-        metadata: {
-          intendedRole: 'admin', // Custom field to indicate this is for admins
-          originalTarget: 'students',
-          busNumber: bus.busNumber,
-          routeName: bus.routeId?.routeName || 'Unknown Route',
-          studentCount: students.length
-        }
-      });
-      notifications.push(adminNotification);
-      
-    } else if (targetType === 'admin') {
-      // Send directly to admin (use 'all' role so receiverId is not required)
-      const adminNotification = await Notification.create({
-        title: `[Driver: ${req.user.name}] ${title}`,
+
+      const notification = await Notification.create({
+        title,
         message,
         type: type || 'info',
-        senderRole: 'driver',
+        senderRole,
         senderId,
-        receiverRole: 'all', // Use 'all' so we can set receiverId to null
-        receiverId: null,
-        priority: priority || 'medium',
-        metadata: {
-          intendedRole: 'admin', // Custom field to indicate this is for admins
-          driverName: req.user.name
-        }
+        receiverRole: receiver.role,
+        receiverId: receiver._id,
+        priority: priority || 'medium'
       });
-      notifications.push(adminNotification);
+
+      await notification.populate('senderId', 'name email role');
+      notifications.push(notification);
     }
-    
-    // Populate sender information
-    await Promise.all(notifications.map(notification => 
-      notification.populate('senderId', 'name email role')
-    ));
-    
+    else if (targetType === 'role') {
+      if (!targetRole) {
+        return res.status(400).json({
+          success: false,
+          message: 'Target role is required for role-based notifications'
+        });
+      }
+
+      if (!['student', 'driver', 'admin'].includes(targetRole)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid target role'
+        });
+      }
+
+      const notification = await Notification.create({
+        title,
+        message,
+        type: type || 'info',
+        senderRole,
+        senderId,
+        receiverRole: targetRole,
+        receiverId: null,
+        priority: priority || 'medium'
+      });
+
+      await notification.populate('senderId', 'name email role');
+      notifications.push(notification);
+    }
+    else if (targetType === 'all') {
+      const notification = await Notification.create({
+        title,
+        message,
+        type: type || 'info',
+        senderRole,
+        senderId,
+        receiverRole: 'all',
+        receiverId: null,
+        priority: priority || 'medium'
+      });
+
+      await notification.populate('senderId', 'name email role');
+      notifications.push(notification);
+    }
+    else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid target type. Must be individual, role, or all'
+      });
+    }
+
     res.status(201).json({
       success: true,
-      message: `Notification sent to ${notifications.length} recipient(s)` + 
-               (targetType === 'students' ? ` (${notifications.length - 1} students + 1 admin copy)` : ''),
+      message: 'Notification sent successfully',
       data: notifications
     });
-    
+
   } catch (error) {
-    console.error('Error sending targeted notification:', error);
+    console.error('Error sending notification:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send notification',
@@ -327,76 +257,6 @@ const sendTargetedNotification = asyncHandler(async (req, res) => {
   }
 });
 
-const createNotification = asyncHandler(async (req, res) => {
-  console.log('=== CREATE NOTIFICATION CONTROLLER CALLED ===');
-  console.log('Request body:', req.body);
-  console.log('User:', req.user);
-  
-  const { 
-    title, 
-    message, 
-    type, 
-    receiverRole, 
-    receiverId, 
-    priority,
-    relatedEntity 
-  } = req.body;
-
-  const senderId = req.user._id;
-  const senderRole = req.user.role;
-
-  // Validate receiver
-  if (receiverRole === 'admin' && senderRole !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      message: 'Only admins can send notifications to other admins'
-    });
-  }
-
-  // If specific receiver is provided, validate they exist
-  if (receiverId) {
-    const receiver = await User.findById(receiverId);
-    if (!receiver) {
-      return res.status(404).json({
-        success: false,
-        message: 'Receiver not found'
-      });
-    }
-
-    // Validate receiver role matches
-    if (receiver.role !== receiverRole) {
-      return res.status(400).json({
-        success: false,
-        message: 'Receiver role does not match specified role'
-      });
-    }
-  }
-
-  const notification = await Notification.create({
-    title,
-    message,
-    type: type || 'info',
-    senderRole,
-    senderId,
-    receiverRole,
-    receiverId,
-    priority: priority || 'medium',
-    relatedEntity
-  });
-
-  // Populate sender information
-  await notification.populate('senderId', 'name email role');
-
-  res.status(201).json({
-    success: true,
-    message: 'Notification created successfully',
-    data: notification
-  });
-});
-
-// @desc    Delete notification
-// @route   DELETE /api/notifications/:id
-// @access  Private
 const deleteNotification = asyncHandler(async (req, res) => {
   const notification = await Notification.findById(req.params.id);
 
@@ -407,12 +267,11 @@ const deleteNotification = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if user has access to delete this notification
   const userId = req.user._id;
   const userRole = req.user.role;
-  
-  const hasAccess = 
-    notification.receiverId && notification.receiverId.toString() === userId.toString() ||
+
+  const hasAccess =
+    (notification.receiverId && notification.receiverId.toString() === userId.toString()) ||
     notification.receiverRole === userRole ||
     notification.receiverRole === 'all' ||
     userRole === 'admin';
@@ -432,9 +291,6 @@ const deleteNotification = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get notification statistics
-// @route   GET /api/notifications/stats
-// @access  Private
 const getNotificationStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
@@ -474,7 +330,6 @@ const getNotificationStats = asyncHandler(async (req, res) => {
 
   const result = stats[0] || { total: 0, unread: 0, byType: [], byPriority: [] };
 
-  // Count by type
   const typeCounts = {};
   result.byType.forEach(item => {
     if (!typeCounts[item.type]) {
@@ -484,7 +339,6 @@ const getNotificationStats = asyncHandler(async (req, res) => {
     if (!item.isRead) typeCounts[item.type].unread++;
   });
 
-  // Count by priority
   const priorityCounts = {};
   result.byPriority.forEach(item => {
     if (!priorityCounts[item.priority]) {
@@ -505,55 +359,12 @@ const getNotificationStats = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Broadcast notification (Admin only)
-// @route   POST /api/notifications/broadcast
-// @access  Private/Admin
-const broadcastNotification = asyncHandler(async (req, res) => {
-  const { title, message, type, priority, targetRoles } = req.body;
-
-  if (!targetRoles || targetRoles.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Target roles are required for broadcast'
-    });
-  }
-
-  const notifications = [];
-
-  // Create notifications for each target role
-  for (const role of targetRoles) {
-    const notification = await Notification.create({
-      title,
-      message,
-      type: type || 'info',
-      senderRole: 'admin',
-      senderId: req.user._id,
-      receiverRole: role,
-      receiverId: null, // Broadcast to all users of this role
-      priority: priority || 'medium'
-    });
-    notifications.push(notification);
-  }
-
-  res.status(201).json({
-    success: true,
-    message: `Broadcast notification sent to ${notifications.length} role(s)`,
-    data: notifications
-  });
-});
-
 module.exports = {
   getNotifications,
   getNotification,
   markAsRead,
   markAllAsRead,
-  createNotification,
+  sendNotification,
   deleteNotification,
-  getNotificationStats,
-  broadcastNotification,
-  sendTargetedNotification
+  getNotificationStats
 };
-
-
-
-

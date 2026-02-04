@@ -226,17 +226,22 @@ const AdminDashboard = () => {
         await routesAPI.updateRoute(selectedItem._id, routeData);
         setSnack({ open: true, message: 'Route updated', severity: 'success' });
       } else if (dialogMode === 'notify') {
-        // Convert receiverRole to targetRoles array for broadcast
-        const broadcastData = {
+        const notificationData = {
           title: formData.title,
           message: formData.message,
-          type: formData.type,
-          priority: formData.priority || 'medium',
-          targetRoles: [formData.receiverRole] // Keep it as array with single role (including 'all')
+          type: formData.type || 'info',
+          priority: formData.priority || 'medium'
         };
-        await notificationsAPI.broadcastNotification(broadcastData);
+
+        if (formData.receiverRole === 'all') {
+          notificationData.targetType = 'all';
+        } else {
+          notificationData.targetType = 'role';
+          notificationData.targetRole = formData.receiverRole;
+        }
+
+        await notificationsAPI.sendNotification(notificationData);
         setSnack({ open: true, message: 'Notification sent', severity: 'success' });
-        // Reload notifications to show the newly created one
         const notificationsResponse = await notificationsAPI.getNotifications({ limit: 5 });
         setRecentNotifications((notificationsResponse.data && notificationsResponse.data.data) || []);
       }
