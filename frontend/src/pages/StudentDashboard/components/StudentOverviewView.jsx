@@ -75,12 +75,22 @@ const StudentOverviewView = () => {
     );
   }
 
-  // Calculate fee details based on user data
-  const monthlyFee = 500;
+  const getMonthlyFee = () => {
+    if (assignedRoute?.stops && user?.stopName) {
+      const stop = assignedRoute.stops.find(s => s.name === user.stopName);
+      if (stop) return stop.fee;
+    }
+    if (assignedRoute?.stops?.length > 0) {
+      return assignedRoute.stops[0].fee;
+    }
+    return 0;
+  };
+
+  const monthlyFee = getMonthlyFee();
   const feeStatus = user?.feeStatus || 'pending';
   let paidAmount = 0;
   let dueAmount = monthlyFee;
-  
+
   if (feeStatus === 'paid') {
     paidAmount = monthlyFee;
     dueAmount = 0;

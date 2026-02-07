@@ -3,12 +3,14 @@ import {
   Container, Grid, Card, CardContent, Typography, Box, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Avatar, Chip, IconButton,
   Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Select, MenuItem, FormControl, InputLabel, Alert, Snackbar, Alert as MuiAlert
+  Select, MenuItem, FormControl, InputLabel, Alert, Skeleton
 } from '@mui/material';
 import {
   People, CheckCircle, Cancel, Add, Edit, Delete, Visibility
 } from '@mui/icons-material';
 import { userService, busService } from '../../../services';
+import { toast } from '../../../utils/toast';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 
 const UsersView = () => {
   const [users, setUsers] = useState([]);
@@ -16,10 +18,10 @@ const UsersView = () => {
   const [buses, setBuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState(''); // 'add' or 'edit'
+  const [dialogMode, setDialogMode] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({});
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, action: null, id: null, message: '' });
 
   useEffect(() => {
     loadData();
@@ -33,43 +35,49 @@ const UsersView = () => {
         userService.getPendingDrivers(),
         busService.getBuses({ limit: 100 })
       ]);
-      
+
       setUsers((usersResponse.data && usersResponse.data.data) || []);
       setPendingDrivers((pendingResponse.data && pendingResponse.data.data) || []);
       setBuses((busesResponse.data && busesResponse.data.data) || []);
     } catch (error) {
       console.error('Error loading data:', error);
-      showSnack('Error loading data', 'error');
+      toast.error('Error loading data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const showSnack = (message, severity = 'success') => {
-    setSnack({ open: true, message, severity });
-  };
-
   const handleApproveDriver = async (driverId) => {
     try {
       await userService.approveDriver(driverId);
-      showSnack('Driver approved');
+      toast.success('Driver approved successfully!');
       setPendingDrivers(prev => prev.filter(d => d._id !== driverId));
-      loadData(); // Reload data
+      loadData();
     } catch (error) {
       console.error('Error approving driver:', error);
-      showSnack('Failed to approve driver', 'error');
+      toast.error('Failed to approve driver. Please try again.');
     }
   };
 
-  const handleRejectDriver = async (driverId) => {
+  const openRejectDialog = (driverId) => {
+    setConfirmDialog({
+      open: true,
+      action: 'reject',
+      id: driverId,
+      message: 'Are you sure you want to reject this driver application? This action cannot be undone.'
+    });
+  };
+
+  const handleRejectDriver = async () => {
     try {
-      await userService.rejectDriver(driverId, 'Rejected by admin');
-      showSnack('Driver rejected');
-      setPendingDrivers(prev => prev.filter(d => d._id !== driverId));
-      loadData(); // Reload data
+      await userService.rejectDriver(confirmDialog.id, 'Rejected by admin');
+      toast.success('Driver application rejected.');
+      setPendingDrivers(prev => prev.filter(d => d._id !== confirmDialog.id));
+      setConfirmDialog({ open: false, action: null, id: null, message: '' });
+      loadData();
     } catch (error) {
       console.error('Error rejecting driver:', error);
-      showSnack('Failed to reject driver', 'error');
+      toast.error('Failed to reject driver. Please try again.');
     }
   };
 
@@ -125,12 +133,12 @@ const UsersView = () => {
     if (formData.role === 'student') {
       if (dialogMode === 'add' || formData.studentId) {
         if (!formData.studentId) {
-          showSnack('Student ID is required for students', 'error');
+          toast.error('Student ID is required for students');
           return;
         }
-        
+
         if (!validateStudentId(formData.studentId)) {
-          showSnack('Student ID must follow the format: FA/SP + 2 digits - BCS/BBA/BSE - 3 digits (e.g., FA23-BCS-123)', 'error');
+          toast.error('Student ID must follow the format: FA/SP + 2 digits - BCS/BBA/BSE - 3 digits (e.g., FA23-BCS-123)');
           return;
         }
       }
@@ -139,12 +147,11 @@ const UsersView = () => {
     try {
       if (dialogMode === 'add') {
         await userService.createUser(formData);
-        showSnack('User created');
+        toast.success('User created successfully!');
       } else if (dialogMode === 'edit') {
-        // Prepare update data (exclude fields that shouldn't be updated)
         const updateData = { ...formData };
-        delete updateData.assignedBusId; // Don't send this to the user update endpoint
-        
+        delete updateData.assignedBusId;
+
         await userService.updateUser(selectedUser._id, updateData);
         
         // If the user is a driver and assignedBusId changed, update the bus assignment
@@ -169,15 +176,15 @@ const UsersView = () => {
             await busService.updateBus(formData.assignedBusId, { driverId: selectedUser._id });
           }
         }
-        
-        showSnack('User updated');
+
+        toast.success('User updated successfully!');
       }
-      
+
       closeDialog();
-      loadData(); // Reload data
+      loadData();
     } catch (error) {
       console.error('Error saving user:', error);
-      showSnack('Operation failed', 'error');
+      toast.error('Operation failed. Please try again.');
     }
   };
 
@@ -185,16 +192,32 @@ const UsersView = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await userService.deleteUser(userId);
-        showSnack('User deleted');
-        loadData(); // Reload data
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        showSnack('Failed to delete user', 'error');
-      }
+  const openDeleteDialog = (userId) => {
+    setConfirmDialog({
+      open: true,
+      action: 'delete',
+      id: userId,
+      message: 'Are you sure you want to delete this user? This action cannot be undone.'
+    });
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      await userService.deleteUser(confirmDialog.id);
+      toast.success('User deleted successfully!');
+      setConfirmDialog({ open: false, action: null, id: null, message: '' });
+      loadData();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user. Please try again.');
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (confirmDialog.action === 'delete') {
+      await handleDeleteUser();
+    } else if (confirmDialog.action === 'reject') {
+      await handleRejectDriver();
     }
   };
 
@@ -244,10 +267,10 @@ const UsersView = () => {
                             >
                               Approve
                             </Button>
-                            <Button 
-                              startIcon={<Cancel />} 
-                              color="error" 
-                              onClick={() => handleRejectDriver(driver._id)}
+                            <Button
+                              startIcon={<Cancel />}
+                              color="error"
+                              onClick={() => openRejectDialog(driver._id)}
                               size="small"
                               sx={{ ml: 1 }}
                             >
@@ -289,7 +312,37 @@ const UsersView = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {users.map(user => {
+                    {loading ? (
+                      [...Array(5)].map((_, index) => (
+                        <TableRow key={index}>
+                          <TableCell><Skeleton variant="rectangular" height={40} /></TableCell>
+                          <TableCell><Skeleton variant="rectangular" height={20} width={60} /></TableCell>
+                          <TableCell><Skeleton variant="rectangular" height={20} width={60} /></TableCell>
+                          <TableCell><Skeleton variant="text" /></TableCell>
+                          <TableCell><Skeleton variant="text" /></TableCell>
+                          <TableCell><Skeleton variant="text" /></TableCell>
+                          <TableCell><Skeleton variant="rectangular" height={30} width={80} /></TableCell>
+                        </TableRow>
+                      ))
+                    ) : users.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} align="center">
+                          <Box sx={{ py: 8, textAlign: 'center' }}>
+                            <People sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
+                            <Typography variant="h6" color="text.secondary" gutterBottom>
+                              No users found
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" paragraph>
+                              Get started by adding your first user to the system
+                            </Typography>
+                            <Button variant="contained" startIcon={<Add />} onClick={openAddDialog}>
+                              Add User
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      users.map(user => {
                       // Find if this user (if driver) is assigned to a bus
                       let relatedInfo = '';
                       if (user.role === 'driver') {
@@ -347,13 +400,14 @@ const UsersView = () => {
                             <IconButton onClick={() => openEditDialog(user)}>
                               <Edit />
                             </IconButton>
-                            <IconButton onClick={() => handleDeleteUser(user._id)} color="error">
+                            <IconButton onClick={() => openDeleteDialog(user._id)} color="error">
                               <Delete />
                             </IconButton>
                           </TableCell>
                         </TableRow>
                       );
-                    })}
+                    })
+                  )}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -460,21 +514,17 @@ const UsersView = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
-      <Snackbar 
-        open={snack.open} 
-        autoHideDuration={4000} 
-        onClose={() => setSnack(prev => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <MuiAlert 
-          onClose={() => setSnack(prev => ({ ...prev, open: false }))} 
-          severity={snack.severity} 
-          sx={{ width: '100%' }}
-        >
-          {snack.message}
-        </MuiAlert>
-      </Snackbar>
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.action === 'delete' ? 'Delete User' : 'Reject Driver'}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.action === 'delete' ? 'Delete' : 'Reject'}
+        cancelText="Cancel"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmDialog({ open: false, action: null, id: null, message: '' })}
+        variant="danger"
+      />
     </Container>
   );
 };

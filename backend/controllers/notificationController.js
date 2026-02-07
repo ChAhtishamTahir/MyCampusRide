@@ -1,3 +1,15 @@
+/*
+ * Notification Controller
+ *
+ * Handles notification operations:
+ * - Get notifications (filtered by user role with pagination)
+ * - Get single notification
+ * - Create notification (admin sends to specific users/roles)
+ * - Mark notification as read
+ * - Mark all notifications as read
+ * - Delete notification
+ */
+
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const Bus = require('../models/Bus');

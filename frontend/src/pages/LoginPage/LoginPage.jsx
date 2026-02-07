@@ -6,6 +6,7 @@ import {
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from '../../utils/toast';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -34,9 +35,10 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const result = await login(formData); // Using context login
-      
+      const result = await login(formData);
+
       if (result.success) {
+        toast.success(`Welcome back, ${result.user.name || 'User'}!`);
         // Redirect to the appropriate dashboard based on user role
         if (result.user.role === 'admin') {
           navigate('/admin', { replace: true });
@@ -45,14 +47,17 @@ const LoginPage = () => {
         } else if (result.user.role === 'student') {
           navigate('/student', { replace: true });
         } else {
-          // Default redirect if role is not recognized
           navigate('/', { replace: true });
         }
       } else {
-        setError(result.error || 'Login failed. Please try again.');
+        const errorMsg = result.error || 'Login failed. Please try again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      const errorMsg = err.response?.data?.message || 'Login failed. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

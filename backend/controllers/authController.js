@@ -1,10 +1,36 @@
+/*
+ * Authentication Controller
+ *
+ * This file handles all authentication-related operations:
+ * - User registration (with role-specific validation)
+ * - User login (with password verification)
+ * - Admin secret code validation (for admin registration security)
+ * - JWT token generation (for maintaining user sessions)
+ * - Getting current user information
+ * - User logout
+ *
+ * SECURITY NOTE: Passwords are hashed before storage using bcrypt (in User model)
+ */
+
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // Generate JWT Token
+// This creates a secure token that proves a user is logged in
+// The token is stored in a cookie and sent with every request to verify identity
+// Parameters:
+//   - userId: The MongoDB _id of the user
+// Returns: A signed JWT token string
 const generateToken = (userId) => {
+  // Get the secret key from environment variables (for security)
+  // If not set, use a default (NOT recommended for production)
   const secret = process.env.JWT_SECRET || 'AhtKhz1314MyCampusRideSecretKey2024';
+
+  // Create and sign the token
+  // - Payload: { userId } - embeds the user ID in the token
+  // - Secret: used to sign and verify the token
+  // - ExpiresIn: token validity period (7 days)
   return jwt.sign({ userId }, secret, {
     expiresIn: '7d'
   });
@@ -14,7 +40,32 @@ const generateToken = (userId) => {
 // @route   POST /api/auth/register
 // @access  Public
 const register = asyncHandler(async (req, res) => {
-  const { name, email, password, role, phone, studentId, licenseNumber } = req.body;
+  const { name, email, password, role, phone, studentId, licenseNumber, adminSecretCode } = req.body;
+
+  // ADMIN SECRET CODE VALIDATION
+  // If registering as admin, validate the secret code
+  // This prevents unauthorized users from creating admin accounts
+  // The secret code is stored in the .env file: ADMIN_SECRET_CODE
+  if (role === 'admin') {
+    // Check if secret code was provided
+    if (!adminSecretCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin secret code is required to register as admin'
+      });
+    }
+
+    // Get the secret code from environment variables
+    const correctSecretCode = process.env.ADMIN_SECRET_CODE;
+
+    // Validate the provided secret code
+    if (adminSecretCode !== correctSecretCode) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid admin secret code. Please contact the system administrator.'
+      });
+    }
+  }
 
   // Check if user already exists
   const existingUser = await User.findOne({ email });
@@ -139,10 +190,10 @@ const getMe = asyncHandler(async (req, res) => {
       path: 'assignedBus',
       populate: [
         { path: 'driverId', select: 'name email phone' },
-        { path: 'routeId', select: 'routeName routeNo stops timings departureTime' }
+        { path: 'routeId', select: 'routeName routeNo stops departureTime estimatedDuration distance' }
       ]
     })
-    .populate('assignedRoute', 'routeName routeNo stops timings departureTime');
+    .populate('assignedRoute', 'routeName routeNo stops departureTime estimatedDuration distance');
 
   res.json({
     success: true,

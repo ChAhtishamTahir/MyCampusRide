@@ -10,12 +10,16 @@ import BusesView from './components/BusesView';
 import RoutesView from './components/RoutesView';
 import FeeManagementView from './components/FeeManagementView';
 import NotificationsView from './components/NotificationsView';
-import ReportsView from './components/ReportsView';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('overview');
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   if (!user || user.role !== 'admin') {
     navigate('/');
@@ -36,8 +40,6 @@ const AdminDashboard = () => {
         return <FeeManagementView />;
       case 'notifications':
         return <NotificationsView />;
-      case 'reports':
-        return <ReportsView />;
       default:
         return <OverviewView />;
     }
@@ -45,9 +47,17 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-      <AdminSidebar activeView={activeView} setActiveView={setActiveView} user={user} logout={logout} navigate={navigate} />
+      <AdminSidebar
+        activeView={activeView}
+        setActiveView={setActiveView}
+        user={user}
+        logout={logout}
+        navigate={navigate}
+        mobileOpen={mobileOpen}
+        handleDrawerToggle={handleDrawerToggle}
+      />
       <Box component="main" sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <AdminHeader activeView={activeView} />
+        <AdminHeader activeView={activeView} handleDrawerToggle={handleDrawerToggle} />
         {renderActiveView()}
       </Box>
     </Box>

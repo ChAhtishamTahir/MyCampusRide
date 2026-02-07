@@ -1,7 +1,7 @@
 import React from 'react';
 import {
-  Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, 
-  Drawer, Avatar, Typography, IconButton, Divider
+  Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
+  Drawer, Avatar, Typography, IconButton, useTheme, useMediaQuery
 } from '@mui/material';
 import {
   Dashboard, Schedule, LocationOn, Person, QrCode2, Notifications, Logout
@@ -18,27 +18,24 @@ const menuItems = [
   { id: 'profile', label: 'Profile', icon: <Person /> },
 ];
 
-const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate }) => {
+const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mobileOpen, handleDrawerToggle }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: drawerWidth,
-          boxSizing: 'border-box',
-          bgcolor: 'white',
-          borderRight: '1px solid rgba(0,0,0,0.08)',
-        },
-      }}
-    >
-      {/* Logo/Top section */}
+  const handleMenuItemClick = (itemId) => {
+    setActiveView(itemId);
+    if (isMobile && handleDrawerToggle) {
+      handleDrawerToggle();
+    }
+  };
+
+  const drawerContent = (
+    <>
       <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
         <Box display="flex" alignItems="center" gap={1.5}>
           <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
@@ -55,12 +52,11 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate }) =
         </Box>
       </Box>
 
-      {/* Navigation Menu */}
       <List sx={{ px: 2, pt: 2 }}>
         {menuItems.map((item) => (
           <ListItem key={item.id} disablePadding>
             <ListItemButton
-              onClick={() => setActiveView(item.id)}
+              onClick={() => handleMenuItemClick(item.id)}
               sx={{
                 mb: 0.5,
                 borderRadius: 2,
@@ -75,8 +71,8 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate }) =
               <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
                 {item.icon}
               </ListItemIcon>
-              <ListItemText 
-                primary={item.label} 
+              <ListItemText
+                primary={item.label}
                 primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
               />
             </ListItemButton>
@@ -84,11 +80,10 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate }) =
         ))}
       </List>
 
-      {/* User Profile Section */}
-      <Box sx={{ 
-        position: 'absolute', 
-        bottom: 0, 
-        left: 0, 
+      <Box sx={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
         right: 0,
         p: 2,
         borderTop: '1px solid rgba(0,0,0,0.08)',
@@ -106,8 +101,8 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate }) =
               {user?.email || 'N/A'}
             </Typography>
           </Box>
-          <IconButton 
-            size="small" 
+          <IconButton
+            size="small"
             onClick={handleLogout}
             sx={{
               color: 'error.main',
@@ -121,7 +116,48 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate }) =
           </IconButton>
         </Box>
       </Box>
-    </Drawer>
+    </>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+              bgcolor: 'white',
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      ) : (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: drawerWidth,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+              bgcolor: 'white',
+              borderRight: '1px solid rgba(0,0,0,0.08)',
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+    </>
   );
 };
 

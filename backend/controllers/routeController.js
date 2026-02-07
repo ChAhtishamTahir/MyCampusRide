@@ -1,3 +1,14 @@
+/*
+ * Route Management Controller
+ *
+ * Handles all route-related operations:
+ * - Get all routes (with filtering and pagination)
+ * - Get single route details
+ * - Create new route (with stop validation)
+ * - Update route information
+ * - Delete route
+ */
+
 const Route = require('../models/Route');
 const Bus = require('../models/Bus');
 const User = require('../models/User');

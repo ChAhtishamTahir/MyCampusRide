@@ -60,6 +60,28 @@ const userSchema = new mongoose.Schema({
       return this.role === 'student';
     }
   },
+  // Fee Notes - Automatic log of all fee-related actions
+  // Stores a timestamped history of fee status changes, route assignments, and bus assignments
+  // Format: "Action by Admin Name on Date Time\n"
+  // Example: "Fee marked as paid by Admin John on Feb 5, 2024 10:30 AM\nAssigned to Route 1 by Admin John on Feb 5, 2024 10:35 AM"
+  feeNotes: {
+    type: String,
+    default: '',
+    required: false
+  },
+  // Fee Updated At - Timestamp of last fee-related update
+  // Automatically set whenever feeStatus, assignedRoute, or assignedBus changes
+  feeUpdatedAt: {
+    type: Date,
+    required: false
+  },
+  // Fee Updated By - Reference to the admin who made the last fee-related update
+  // Used to track which admin made changes for accountability
+  feeUpdatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   assignedRoute: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Route',

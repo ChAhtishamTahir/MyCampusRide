@@ -6,6 +6,7 @@ import {
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '../../utils/toast';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +16,8 @@ const RegisterPage = () => {
     confirmPassword: '',
     phone: '',
     role: 'student',
-    studentId: ''  // Add studentId field
+    studentId: '',
+    adminSecretCode: ''  // Add admin secret code field
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,7 +44,9 @@ const RegisterPage = () => {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      const errorMsg = 'Passwords do not match';
+      setError(errorMsg);
+      toast.error(errorMsg);
       setLoading(false);
       return;
     }
@@ -50,13 +54,17 @@ const RegisterPage = () => {
     // Validate Student ID if role is student
     if (formData.role === 'student') {
       if (!formData.studentId) {
-        setError('Student ID is required');
+        const errorMsg = 'Student ID is required';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setLoading(false);
         return;
       }
-      
+
       if (!validateStudentId(formData.studentId)) {
-        setError('Student ID must follow the format: FA/SP + 2 digits - BCS/BBA/BSE - 3 digits (e.g., FA23-BCS-123)');
+        const errorMsg = 'Student ID must follow the format: FA/SP + 2 digits - BCS/BBA/BSE - 3 digits (e.g., FA23-BCS-123)';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setLoading(false);
         return;
       }
@@ -76,7 +84,9 @@ const RegisterPage = () => {
       if (formData.role === 'driver') {
         // For drivers, license number is required during registration
         if (!formData.licenseNumber) {
-          setError('License number is required for drivers');
+          const errorMsg = 'License number is required for drivers';
+          setError(errorMsg);
+          toast.error(errorMsg);
           setLoading(false);
           return;
         }
@@ -84,17 +94,31 @@ const RegisterPage = () => {
       } else if (formData.role === 'student') {
         // For students, student ID is required during registration
         registrationData.studentId = formData.studentId;
+      } else if (formData.role === 'admin') {
+        // For admins, admin secret code is required during registration
+        if (!formData.adminSecretCode) {
+          const errorMsg = 'Admin secret code is required for admin registration';
+          setError(errorMsg);
+          toast.error(errorMsg);
+          setLoading(false);
+          return;
+        }
+        registrationData.adminSecretCode = formData.adminSecretCode;
       }
 
       const result = await register(registrationData);
-      
+
       if (result.success) {
         // For drivers, they need approval before accessing dashboard
         if (result.user.role === 'driver' && result.user.status === 'pending') {
-          // Show success message and redirect to login
-          alert('Registration successful! Your driver account is pending admin approval. You will be able to access your dashboard once approved.');
+          toast.success('Registration successful! Your driver account is pending admin approval. You will be able to access your dashboard once approved.', {
+            autoClose: 5000,
+          });
           navigate('/login', { replace: true });
         } else {
+          toast.success('Registration successful! Welcome to MyCampusRide.', {
+            autoClose: 3000,
+          });
           // For students and admins, redirect to their dashboard
           if (result.user.role === 'admin') {
             navigate('/admin', { replace: true });
@@ -105,10 +129,14 @@ const RegisterPage = () => {
           }
         }
       } else {
-        setError(result.error || 'Registration failed. Please try again.');
+        const errorMsg = result.error || 'Registration failed. Please try again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      const errorMsg = err.response?.data?.message || 'Registration failed. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -222,6 +250,7 @@ const RegisterPage = () => {
                 >
                   <MenuItem value="student">Student</MenuItem>
                   <MenuItem value="driver">Driver</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
                 </Select>
               </FormControl>
 
@@ -250,6 +279,21 @@ const RegisterPage = () => {
                   name="licenseNumber"
                   value={formData.licenseNumber || ''}
                   onChange={handleChange}
+                />
+              )}
+
+              {formData.role === 'admin' && (
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="adminSecretCode"
+                  label="Admin Secret Code"
+                  name="adminSecretCode"
+                  type="password"
+                  value={formData.adminSecretCode || ''}
+                  onChange={handleChange}
+                  helperText="Enter the admin secret code to register as an administrator"
                 />
               )}
 

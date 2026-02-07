@@ -1,3 +1,18 @@
+/*
+ * Bus Management Controller
+ *
+ * Handles all bus-related operations:
+ * - Get all buses (with filtering and pagination)
+ * - Get single bus details
+ * - Create new bus
+ * - Update bus information
+ * - Delete bus
+ * - Assign driver to bus
+ * - Unassign driver from bus
+ * - Assign route to bus
+ * - Unassign route from bus
+ */
+
 const Bus = require('../models/Bus');
 const User = require('../models/User');
 const Route = require('../models/Route');
@@ -19,7 +34,7 @@ const getBuses = asyncHandler(async (req, res) => {
   // Get buses with pagination
   const buses = await Bus.find(filter)
     .populate('driverId', 'name email phone')
-    .populate('routeId', 'routeName stops timings')
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance')
     .sort({ busNumber: 1 })
     .skip(skip)
     .limit(parseInt(limit));
@@ -44,7 +59,7 @@ const getBuses = asyncHandler(async (req, res) => {
 const getBus = asyncHandler(async (req, res) => {
   const bus = await Bus.findById(req.params.id)
     .populate('driverId', 'name email phone')
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   if (!bus) {
     return res.status(404).json({
@@ -114,7 +129,7 @@ const createBus = asyncHandler(async (req, res) => {
   // Populate the created bus
   const populatedBus = await Bus.findById(bus._id)
     .populate('driverId', 'name email phone')
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   res.status(201).json({
     success: true,
@@ -189,7 +204,7 @@ const updateBus = asyncHandler(async (req, res) => {
     { busNumber, driverId, routeId, capacity, model, year, status },
     { new: true, runValidators: true }
   ).populate('driverId', 'name email phone')
-   .populate('routeId', 'routeName stops timings');
+   .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   res.json({
     success: true,
@@ -232,7 +247,7 @@ const deleteBus = asyncHandler(async (req, res) => {
 const getBusesByDriver = asyncHandler(async (req, res) => {
   const buses = await Bus.find({ driverId: req.params.driverId })
     .populate('driverId', 'name email phone')
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   res.json({
     success: true,
@@ -246,7 +261,7 @@ const getBusesByDriver = asyncHandler(async (req, res) => {
 const getBusesByRoute = asyncHandler(async (req, res) => {
   const buses = await Bus.find({ routeId: req.params.routeId })
     .populate('driverId', 'name email phone')
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   res.json({
     success: true,
@@ -263,7 +278,7 @@ const getActiveBuses = asyncHandler(async (req, res) => {
     isActive: true 
   })
     .populate('driverId', 'name email phone')
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   res.json({
     success: true,

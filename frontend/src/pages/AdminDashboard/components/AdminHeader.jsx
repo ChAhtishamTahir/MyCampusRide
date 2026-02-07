@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  AppBar, Toolbar, Typography, Button, Badge, IconButton, Popover
+  AppBar, Toolbar, Typography, Button, Badge, IconButton, Popover, useTheme, useMediaQuery
 } from '@mui/material';
-import { Refresh, Notifications } from '@mui/icons-material';
+import { Refresh, Notifications, Menu as MenuIcon } from '@mui/icons-material';
 import NotificationPanel from '../../../components/NotificationPanel';
 import { notificationService } from '../../../services';
 
@@ -16,7 +16,9 @@ const menuItems = [
   { id: 'reports', label: 'Reports' },
 ];
 
-const AdminHeader = ({ activeView }) => {
+const AdminHeader = ({ activeView, handleDrawerToggle }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [refreshing, setRefreshing] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -77,6 +79,17 @@ const AdminHeader = ({ activeView }) => {
         }}
       >
         <Toolbar>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1, color: 'text.primary' }}>
             {menuItems.find(item => item.id === activeView)?.label || 'Admin Dashboard'}
           </Typography>
@@ -91,20 +104,22 @@ const AdminHeader = ({ activeView }) => {
               <Notifications />
             </Badge>
           </IconButton>
-          <Button
-            variant="outlined"
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3
-            }}
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          {!isMobile && (
+            <Button
+              variant="outlined"
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3
+              }}
+              startIcon={<Refresh />}
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
       

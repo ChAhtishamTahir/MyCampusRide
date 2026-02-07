@@ -53,12 +53,16 @@ const Navbar = () => {
   };
 
   const handleProfile = () => {
-    // Navigate to profile page (if implemented)
+    if (isAdmin()) navigate('/admin-dashboard');
+    else if (isDriver()) navigate('/driver-dashboard');
+    else if (isStudent()) navigate('/student-dashboard');
     handleMenuClose();
   };
 
   const handleSettings = () => {
-    // Navigate to settings page (if implemented)
+    if (isAdmin()) navigate('/admin-dashboard');
+    else if (isDriver()) navigate('/driver-dashboard');
+    else if (isStudent()) navigate('/student-dashboard');
     handleMenuClose();
   };
 
@@ -194,21 +198,21 @@ const Navbar = () => {
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to users management */}}
+                  onClick={() => navigate('/admin-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Users
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to buses management */}}
+                  onClick={() => navigate('/admin-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Buses
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to routes management */}}
+                  onClick={() => navigate('/admin-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Routes
@@ -227,7 +231,7 @@ const Navbar = () => {
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to trip management */}}
+                  onClick={() => navigate('/driver-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   My Trips
@@ -246,7 +250,7 @@ const Navbar = () => {
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to bus tracking */}}
+                  onClick={() => navigate('/student-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Track Bus
@@ -265,7 +269,11 @@ const Navbar = () => {
           <IconButton
             size="large"
             color="inherit"
-            onClick={() => {/* Navigate to notifications */}}
+            onClick={() => {
+              if (isAdmin()) navigate('/admin-dashboard');
+              else if (isDriver()) navigate('/driver-dashboard');
+              else if (isStudent()) navigate('/student-dashboard');
+            }}
           >
             <Notifications />
           </IconButton>

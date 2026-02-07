@@ -1,3 +1,20 @@
+/*
+ * User Management Controller
+ *
+ * This file handles all user-related operations (admin only):
+ * - Get all users (with filtering and pagination)
+ * - Get single user details
+ * - Update user (with AUTOMATIC FEE NOTES generation)
+ * - Delete user
+ * - Approve/reject driver applications
+ *
+ * IMPORTANT: The updateUser function automatically tracks all fee-related changes:
+ * - When feeStatus changes: Records "Fee marked as [status] by [admin] on [date]"
+ * - When assignedRoute changes: Records "Assigned to route [name] by [admin] on [date]"
+ * - When assignedBus changes: Records "Assigned to bus [number] by [admin] on [date]"
+ * This creates an audit trail that helps admins track fee management history.
+ */
+
 const User = require('../models/User');
 const Bus = require('../models/Bus');
 const Route = require('../models/Route');
@@ -56,10 +73,10 @@ const getUser = asyncHandler(async (req, res) => {
       path: 'assignedBus',
       populate: [
         { path: 'driverId', select: 'name email phone' },
-        { path: 'routeId', select: 'routeName routeNo stops timings departureTime' }
+        { path: 'routeId', select: 'routeName routeNo stops departureTime estimatedDuration distance' }
       ]
     })
-    .populate('assignedRoute', 'routeName routeNo stops timings departureTime');
+    .populate('assignedRoute', 'routeName routeNo stops departureTime estimatedDuration distance');
 
   if (!user) {
     return res.status(404).json({
@@ -79,8 +96,12 @@ const getUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const updateUser = asyncHandler(async (req, res) => {
   const { name, email, phone, status, feeStatus, assignedRoute, assignedBus } = req.body;
-  
-  const user = await User.findById(req.params.id);
+
+  // Find the existing user to compare changes
+  const user = await User.findById(req.params.id)
+    .populate('assignedRoute', 'routeName')
+    .populate('assignedBus', 'busNumber');
+
   if (!user) {
     return res.status(404).json({
       success: false,
@@ -88,10 +109,106 @@ const updateUser = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update user
+  // Get the admin who is making this update
+  const adminName = req.user.name; // The logged-in admin's name
+  const adminId = req.user._id;
+
+  // Generate timestamp for the note
+  const timestamp = new Date().toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  // Initialize variables for tracking changes
+  let feeNoteEntries = [];
+
+  // AUTOMATIC FEE NOTES GENERATION
+  // Check if feeStatus changed
+  if (feeStatus && feeStatus !== user.feeStatus) {
+    const statusMap = {
+      'paid': 'Paid',
+      'partially_paid': 'Partially Paid',
+      'pending': 'Pending'
+    };
+    feeNoteEntries.push(
+      `Fee marked as ${statusMap[feeStatus]} by ${adminName} on ${timestamp}`
+    );
+  }
+
+  // Check if assignedRoute changed
+  if (assignedRoute !== undefined) {
+    // Convert to string for comparison
+    const oldRouteId = user.assignedRoute?._id?.toString();
+    const newRouteId = assignedRoute?.toString();
+
+    if (oldRouteId !== newRouteId) {
+      if (!newRouteId) {
+        // Route was removed
+        feeNoteEntries.push(
+          `Unassigned from route by ${adminName} on ${timestamp}`
+        );
+      } else {
+        // Route was changed or newly assigned
+        const routeData = await Route.findById(newRouteId);
+        if (routeData) {
+          feeNoteEntries.push(
+            `Assigned to route "${routeData.routeName}" by ${adminName} on ${timestamp}`
+          );
+        }
+      }
+    }
+  }
+
+  // Check if assignedBus changed
+  if (assignedBus !== undefined) {
+    // Convert to string for comparison
+    const oldBusId = user.assignedBus?._id?.toString();
+    const newBusId = assignedBus?.toString();
+
+    if (oldBusId !== newBusId) {
+      if (!newBusId) {
+        // Bus was removed
+        feeNoteEntries.push(
+          `Unassigned from bus by ${adminName} on ${timestamp}`
+        );
+      } else {
+        // Bus was changed or newly assigned
+        const busData = await Bus.findById(newBusId);
+        if (busData) {
+          feeNoteEntries.push(
+            `Assigned to bus "${busData.busNumber}" by ${adminName} on ${timestamp}`
+          );
+        }
+      }
+    }
+  }
+
+  // Build the update object
+  const updateData = { name, email, phone, status, feeStatus, assignedRoute, assignedBus };
+
+  // If there were any fee-related changes, append to feeNotes
+  if (feeNoteEntries.length > 0) {
+    const newNote = feeNoteEntries.join('\n');
+    const existingNotes = user.feeNotes || '';
+
+    // Append new notes to existing notes (with separator if notes already exist)
+    updateData.feeNotes = existingNotes
+      ? `${existingNotes}\n${newNote}`
+      : newNote;
+
+    // Update fee tracking fields
+    updateData.feeUpdatedAt = new Date();
+    updateData.feeUpdatedBy = adminId;
+  }
+
+  // Update user with all changes including automatic fee notes
   const updatedUser = await User.findByIdAndUpdate(
     req.params.id,
-    { name, email, phone, status, feeStatus, assignedRoute, assignedBus },
+    updateData,
     { new: true, runValidators: true }
   ).populate({
     path: 'assignedBus',
@@ -101,7 +218,8 @@ const updateUser = asyncHandler(async (req, res) => {
       { path: 'routeId', select: 'routeName routeNo' }
     ]
   })
-   .populate('assignedRoute', 'routeName routeNo');
+   .populate('assignedRoute', 'routeName routeNo')
+   .populate('feeUpdatedBy', 'name email');
 
   res.json({
     success: true,
