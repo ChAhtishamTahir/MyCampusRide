@@ -208,13 +208,32 @@ const updateProfile = asyncHandler(async (req, res) => {
   const { name, email, phone } = req.body;
   const userId = req.user._id;
 
-  const updateData = {};
-
+  // Validate name if provided
   if (name !== undefined) {
-    updateData.name = name;
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name must be a non-empty string'
+      });
+    }
+    if (name.length < 2 || name.length > 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name must be between 2 and 50 characters'
+      });
+    }
   }
 
+  // Validate email if provided
   if (email !== undefined) {
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid email address'
+      });
+    }
+
     const existingUser = await User.findOne({ email, _id: { $ne: userId } });
     if (existingUser) {
       return res.status(400).json({
@@ -222,6 +241,26 @@ const updateProfile = asyncHandler(async (req, res) => {
         message: 'Email already in use by another account'
       });
     }
+  }
+
+  // Validate phone if provided
+  if (phone !== undefined) {
+    const phoneRegex = /^0\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone must be in format 03XXXXXXXXX (e.g., 03001234567)'
+      });
+    }
+  }
+
+  const updateData = {};
+
+  if (name !== undefined) {
+    updateData.name = name.trim();
+  }
+
+  if (email !== undefined) {
     updateData.email = email;
   }
 
@@ -234,6 +273,13 @@ const updateProfile = asyncHandler(async (req, res) => {
     updateData,
     { new: true, runValidators: true }
   );
+
+  if (!user) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update profile. Please try again.'
+    });
+  }
 
   res.json({
     success: true,

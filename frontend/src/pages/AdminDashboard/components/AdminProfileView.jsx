@@ -52,6 +52,29 @@ const AdminProfileView = () => {
     try {
       setSaving(true);
 
+      // Validate name
+      if (!formData.name || formData.name.trim().length < 2 || formData.name.length > 50) {
+        toast.error('Name must be between 2 and 50 characters');
+        setSaving(false);
+        return;
+      }
+
+      // Validate email
+      const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast.error('Please enter a valid email address');
+        setSaving(false);
+        return;
+      }
+
+      // Validate phone
+      const phoneRegex = /^0\d{10}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        toast.error('Phone must be in format 03XXXXXXXXX (e.g., 03001234567)');
+        setSaving(false);
+        return;
+      }
+
       await authService.updateProfile({
         name: formData.name,
         email: formData.email,
@@ -63,7 +86,8 @@ const AdminProfileView = () => {
       loadUserData();
     } catch (err) {
       console.error('Error updating profile:', err);
-      toast.error('Failed to update profile. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to update profile. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
