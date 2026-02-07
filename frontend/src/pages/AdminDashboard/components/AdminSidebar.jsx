@@ -1,3 +1,18 @@
+/**
+ * AdminSidebar Component
+ *
+ * Left navigation sidebar for the Admin Portal with brand styling.
+ * Features:
+ * - Brand logo with gradient text
+ * - Navigation menu with gradient active states
+ * - User profile section at bottom
+ * - Logout functionality with confirmation
+ * - Responsive drawer for mobile
+ *
+ * The design matches the landing page aesthetic with gradient colors,
+ * smooth transitions, and modern styling.
+ */
+
 import React, { useState } from 'react';
 import {
   Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
@@ -9,8 +24,10 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
+import { BRAND_COLORS, SIDEBAR_STYLES, gradientText, BORDER_RADIUS } from '../styles/brandStyles';
 
-const drawerWidth = 280;
+// Sidebar width constant (matches design system)
+const drawerWidth = SIDEBAR_STYLES.width;
 
 const menuItems = [
   { id: 'overview', label: 'Overview', icon: <Dashboard /> },
@@ -48,24 +65,55 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
     }
   };
 
+  // ========================================================================
+  // DRAWER CONTENT - Brand styled sidebar navigation
+  // ========================================================================
   const drawerContent = (
     <>
-      <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+      {/* Brand Logo Section - Matches landing page style */}
+      <Box sx={{
+        p: 3,
+        borderBottom: `1px solid ${BRAND_COLORS.slate300}`,
+      }}>
         <Box display="flex" alignItems="center" gap={1.5}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-            <Security />
-          </Avatar>
+          {/* Gradient icon box - matching landing page icon boxes */}
+          <Box sx={{
+            width: 48,
+            height: 48,
+            borderRadius: BORDER_RADIUS.xl,
+            background: BRAND_COLORS.primaryGradient,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
+          }}>
+            <Security sx={{ color: BRAND_COLORS.white, fontSize: 24 }} />
+          </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-              MyCampusRide
+            {/* Brand name with gradient text - matching landing page */}
+            <Typography
+              variant="h6"
+              sx={{
+                ...SIDEBAR_STYLES.logo,
+                fontSize: '1.1rem',
+              }}
+            >
+              CampusRide
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              sx={{
+                color: BRAND_COLORS.slate600,
+                fontWeight: 600,
+              }}
+            >
               Admin Portal
             </Typography>
           </Box>
         </Box>
       </Box>
 
+      {/* Navigation Menu - Brand styled with gradient active states */}
       <List sx={{ px: 2, pt: 2 }}>
         {menuItems.map((item) => (
           <ListItem key={item.id} disablePadding>
@@ -73,57 +121,104 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
               onClick={() => handleMenuItemClick(item.id)}
               sx={{
                 mb: 0.5,
-                borderRadius: 2,
-                bgcolor: activeView === item.id ? 'primary.main' : 'transparent',
-                color: activeView === item.id ? 'white' : 'text.primary',
+                borderRadius: BORDER_RADIUS.md,
+                // Active state: gradient background (matching landing page CTAs)
+                background: activeView === item.id ? BRAND_COLORS.primaryGradient : 'transparent',
+                color: activeView === item.id ? BRAND_COLORS.white : BRAND_COLORS.slate700,
+                boxShadow: activeView === item.id ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none',
+                py: 1.5,
                 '&:hover': {
-                  bgcolor: activeView === item.id ? 'primary.dark' : 'action.hover',
+                  // Hover state: light brand background
+                  bgcolor: activeView === item.id ? undefined : 'rgba(14, 165, 233, 0.08)',
+                  // Keep gradient on hover if active
+                  background: activeView === item.id ? BRAND_COLORS.primaryGradientHover : undefined,
+                  transform: 'translateX(4px)',
                 },
-                transition: 'all 0.2s ease',
+                transition: 'all 0.3s ease',
               }}
             >
-              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+              {/* Icon with proper color inheritance */}
+              <ListItemIcon sx={{
+                minWidth: 40,
+                color: 'inherit',
+                transition: 'transform 0.2s ease',
+              }}>
                 {item.icon}
               </ListItemIcon>
+              {/* Label with brand typography */}
               <ListItemText
                 primary={item.label}
-                primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
+                primaryTypographyProps={{
+                  fontWeight: activeView === item.id ? 700 : 600,
+                  fontSize: '0.95rem',
+                }}
               />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
 
+      {/* User Profile Section - Brand styled at bottom */}
       <Box sx={{
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
         p: 2,
-        borderTop: '1px solid rgba(0,0,0,0.08)',
-        bgcolor: 'grey.50'
+        borderTop: `1px solid ${BRAND_COLORS.slate300}`,
+        bgcolor: BRAND_COLORS.slate100,
       }}>
         <Box display="flex" alignItems="center" gap={1.5}>
-          <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {user?.name?.charAt(0).toUpperCase() || 'A'}
-          </Avatar>
+          {/* User avatar with gradient border */}
+          <Box sx={{
+            position: 'relative',
+            padding: '2px',
+            borderRadius: '50%',
+            background: BRAND_COLORS.primaryGradient,
+          }}>
+            <Avatar sx={{
+              bgcolor: BRAND_COLORS.white,
+              color: BRAND_COLORS.skyBlue,
+              fontWeight: 700,
+              border: `2px solid ${BRAND_COLORS.white}`,
+            }}>
+              {user?.name?.charAt(0).toUpperCase() || 'A'}
+            </Avatar>
+          </Box>
+          {/* User info */}
           <Box flex={1} minWidth={0}>
-            <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 700,
+                color: BRAND_COLORS.slate900,
+              }}
+              noWrap
+            >
               {user?.name || 'Admin'}
             </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography
+              variant="caption"
+              sx={{
+                color: BRAND_COLORS.slate600,
+              }}
+              noWrap
+            >
               {user?.email || 'N/A'}
             </Typography>
           </Box>
+          {/* Logout button with brand hover effect */}
           <IconButton
             size="small"
             onClick={handleLogout}
             sx={{
-              color: 'error.main',
+              color: BRAND_COLORS.errorRed,
+              transition: 'all 0.3s ease',
               '&:hover': {
-                bgcolor: 'error.light',
-                color: 'white'
-              }
+                bgcolor: BRAND_COLORS.errorRed,
+                color: BRAND_COLORS.white,
+                transform: 'scale(1.1)',
+              },
             }}
           >
             <Logout fontSize="small" />
@@ -133,28 +228,35 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
     </>
   );
 
+  // ========================================================================
+  // RENDER - Responsive drawer with brand styling
+  // ========================================================================
   return (
     <>
+      {/* Mobile Drawer - Temporary overlay */}
       {isMobile ? (
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true,
+            keepMounted: true, // Better mobile performance
           }}
           sx={{
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
-              bgcolor: 'white',
+              bgcolor: BRAND_COLORS.white,
+              // Add subtle shadow when open
+              boxShadow: '4px 0 24px rgba(0, 0, 0, 0.12)',
             },
           }}
         >
           {drawerContent}
         </Drawer>
       ) : (
+        // Desktop Drawer - Permanent sidebar
         <Drawer
           variant="permanent"
           sx={{
@@ -163,8 +265,9 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
             '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
-              bgcolor: 'white',
-              borderRight: '1px solid rgba(0,0,0,0.08)',
+              bgcolor: BRAND_COLORS.white,
+              // Subtle border with brand color
+              borderRight: `1px solid ${BRAND_COLORS.slate300}`,
             },
           }}
         >
