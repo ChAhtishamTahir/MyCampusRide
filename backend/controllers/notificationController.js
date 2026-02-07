@@ -20,6 +20,7 @@ const getNotifications = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
   const userStatus = req.user.status;
+  const userActivatedAt = req.user.activatedAt;
 
   if (userStatus === 'pending' || userStatus === 'suspended') {
     return res.json({
@@ -34,11 +35,21 @@ const getNotifications = asyncHandler(async (req, res) => {
     });
   }
 
+  const cutoffDate = userActivatedAt || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
   const filter = {
     $or: [
       { receiverId: userId },
-      { receiverId: null, receiverRole: userRole },
-      { receiverId: null, receiverRole: 'all' }
+      {
+        receiverId: null,
+        receiverRole: userRole,
+        createdAt: { $gte: cutoffDate }
+      },
+      {
+        receiverId: null,
+        receiverRole: 'all',
+        createdAt: { $gte: cutoffDate }
+      }
     ]
   };
 
@@ -163,6 +174,7 @@ const markAllAsRead = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
   const userStatus = req.user.status;
+  const userActivatedAt = req.user.activatedAt;
 
   if (userStatus === 'pending' || userStatus === 'suspended') {
     return res.status(403).json({
@@ -171,11 +183,21 @@ const markAllAsRead = asyncHandler(async (req, res) => {
     });
   }
 
+  const cutoffDate = userActivatedAt || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
   const filter = {
     $or: [
       { receiverId: userId },
-      { receiverId: null, receiverRole: userRole },
-      { receiverId: null, receiverRole: 'all' }
+      {
+        receiverId: null,
+        receiverRole: userRole,
+        createdAt: { $gte: cutoffDate }
+      },
+      {
+        receiverId: null,
+        receiverRole: 'all',
+        createdAt: { $gte: cutoffDate }
+      }
     ],
     isRead: false
   };
@@ -360,6 +382,7 @@ const getNotificationStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
   const userStatus = req.user.status;
+  const userActivatedAt = req.user.activatedAt;
 
   if (userStatus === 'pending' || userStatus === 'suspended') {
     return res.json({
@@ -373,11 +396,21 @@ const getNotificationStats = asyncHandler(async (req, res) => {
     });
   }
 
+  const cutoffDate = userActivatedAt || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
   const filter = {
     $or: [
       { receiverId: userId },
-      { receiverId: null, receiverRole: userRole },
-      { receiverId: null, receiverRole: 'all' }
+      {
+        receiverId: null,
+        receiverRole: userRole,
+        createdAt: { $gte: cutoffDate }
+      },
+      {
+        receiverId: null,
+        receiverRole: 'all',
+        createdAt: { $gte: cutoffDate }
+      }
     ]
   };
 

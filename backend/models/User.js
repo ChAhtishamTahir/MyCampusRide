@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
       return 'active';
     }
   },
+  activatedAt: {
+    type: Date,
+    required: false
+  },
   studentId: {
     type: String,
     required: function() {
@@ -148,11 +152,18 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
+  if (!this.isModified('password') && !this.isModified('status')) return next();
+
   try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
+    if (this.isModified('password')) {
+      const salt = await bcrypt.genSalt(12);
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+
+    if (this.isModified('status') && this.status === 'active' && !this.activatedAt) {
+      this.activatedAt = new Date();
+    }
+
     next();
   } catch (error) {
     next(error);
