@@ -287,7 +287,6 @@ const approveDriver = asyncHandler(async (req, res) => {
   driver.status = 'active';
   await driver.save();
 
-  // Create notification for driver
   await Notification.createSystemNotification(
     'Account Approved',
     'Your driver account has been approved. You can now access all driver features.',
@@ -295,7 +294,8 @@ const approveDriver = asyncHandler(async (req, res) => {
     {
       receiverId: driver._id,
       type: 'success',
-      priority: 'high'
+      priority: 'high',
+      relatedEntity: { type: 'user', id: driver._id }
     }
   );
 
@@ -339,7 +339,6 @@ const rejectDriver = asyncHandler(async (req, res) => {
   driver.status = 'suspended';
   await driver.save();
 
-  // Create notification for driver
   await Notification.createSystemNotification(
     'Account Rejected',
     `Your driver account application has been rejected. Reason: ${reason || 'No reason provided'}`,
@@ -347,7 +346,8 @@ const rejectDriver = asyncHandler(async (req, res) => {
     {
       receiverId: driver._id,
       type: 'error',
-      priority: 'high'
+      priority: 'high',
+      relatedEntity: { type: 'user', id: driver._id }
     }
   );
 

@@ -99,7 +99,6 @@ notificationSchema.methods.markAsRead = function() {
   return this.save();
 };
 
-// Static method to create system notification
 notificationSchema.statics.createSystemNotification = function(title, message, receiverRole, options = {}) {
   return this.create({
     title,
@@ -107,6 +106,7 @@ notificationSchema.statics.createSystemNotification = function(title, message, r
     type: options.type || 'info',
     senderRole: 'system',
     receiverRole,
+    receiverId: options.receiverId || null,
     priority: options.priority || 'medium',
     relatedEntity: options.relatedEntity,
     metadata: options.metadata || {}

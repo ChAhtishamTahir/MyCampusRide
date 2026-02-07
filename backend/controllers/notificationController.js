@@ -19,12 +19,26 @@ const getNotifications = asyncHandler(async (req, res) => {
   const { isRead, type, priority, page = 1, limit = 20 } = req.query;
   const userId = req.user._id;
   const userRole = req.user.role;
+  const userStatus = req.user.status;
+
+  if (userStatus === 'pending' || userStatus === 'suspended') {
+    return res.json({
+      success: true,
+      data: [],
+      pagination: {
+        current: 1,
+        pages: 0,
+        total: 0
+      },
+      unreadCount: 0
+    });
+  }
 
   const filter = {
     $or: [
       { receiverId: userId },
-      { receiverRole: userRole },
-      { receiverRole: 'all' }
+      { receiverId: null, receiverRole: userRole },
+      { receiverId: null, receiverRole: 'all' }
     ]
   };
 
@@ -60,6 +74,17 @@ const getNotifications = asyncHandler(async (req, res) => {
 });
 
 const getNotification = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const userRole = req.user.role;
+  const userStatus = req.user.status;
+
+  if (userStatus === 'pending' || userStatus === 'suspended') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Account is not active.'
+    });
+  }
+
   const notification = await Notification.findById(req.params.id)
     .populate('senderId', 'name email role');
 
@@ -70,13 +95,12 @@ const getNotification = asyncHandler(async (req, res) => {
     });
   }
 
-  const userId = req.user._id;
-  const userRole = req.user.role;
-
-  const hasAccess =
-    (notification.receiverId && notification.receiverId.toString() === userId.toString()) ||
-    notification.receiverRole === userRole ||
-    notification.receiverRole === 'all';
+  let hasAccess = false;
+  if (notification.receiverId) {
+    hasAccess = notification.receiverId.toString() === userId.toString();
+  } else {
+    hasAccess = notification.receiverRole === userRole || notification.receiverRole === 'all';
+  }
 
   if (!hasAccess) {
     return res.status(403).json({
@@ -92,6 +116,17 @@ const getNotification = asyncHandler(async (req, res) => {
 });
 
 const markAsRead = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const userRole = req.user.role;
+  const userStatus = req.user.status;
+
+  if (userStatus === 'pending' || userStatus === 'suspended') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Account is not active.'
+    });
+  }
+
   const notification = await Notification.findById(req.params.id);
 
   if (!notification) {
@@ -101,13 +136,12 @@ const markAsRead = asyncHandler(async (req, res) => {
     });
   }
 
-  const userId = req.user._id;
-  const userRole = req.user.role;
-
-  const hasAccess =
-    (notification.receiverId && notification.receiverId.toString() === userId.toString()) ||
-    notification.receiverRole === userRole ||
-    notification.receiverRole === 'all';
+  let hasAccess = false;
+  if (notification.receiverId) {
+    hasAccess = notification.receiverId.toString() === userId.toString();
+  } else {
+    hasAccess = notification.receiverRole === userRole || notification.receiverRole === 'all';
+  }
 
   if (!hasAccess) {
     return res.status(403).json({
@@ -128,12 +162,20 @@ const markAsRead = asyncHandler(async (req, res) => {
 const markAllAsRead = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
+  const userStatus = req.user.status;
+
+  if (userStatus === 'pending' || userStatus === 'suspended') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Account is not active.'
+    });
+  }
 
   const filter = {
     $or: [
       { receiverId: userId },
-      { receiverRole: userRole },
-      { receiverRole: 'all' }
+      { receiverId: null, receiverRole: userRole },
+      { receiverId: null, receiverRole: 'all' }
     ],
     isRead: false
   };
@@ -270,6 +312,17 @@ const sendNotification = asyncHandler(async (req, res) => {
 });
 
 const deleteNotification = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const userRole = req.user.role;
+  const userStatus = req.user.status;
+
+  if (userStatus === 'pending' || userStatus === 'suspended') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Account is not active.'
+    });
+  }
+
   const notification = await Notification.findById(req.params.id);
 
   if (!notification) {
@@ -279,14 +332,14 @@ const deleteNotification = asyncHandler(async (req, res) => {
     });
   }
 
-  const userId = req.user._id;
-  const userRole = req.user.role;
-
-  const hasAccess =
-    (notification.receiverId && notification.receiverId.toString() === userId.toString()) ||
-    notification.receiverRole === userRole ||
-    notification.receiverRole === 'all' ||
-    userRole === 'admin';
+  let hasAccess = false;
+  if (userRole === 'admin') {
+    hasAccess = true;
+  } else if (notification.receiverId) {
+    hasAccess = notification.receiverId.toString() === userId.toString();
+  } else {
+    hasAccess = notification.receiverRole === userRole || notification.receiverRole === 'all';
+  }
 
   if (!hasAccess) {
     return res.status(403).json({
@@ -306,12 +359,25 @@ const deleteNotification = asyncHandler(async (req, res) => {
 const getNotificationStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const userRole = req.user.role;
+  const userStatus = req.user.status;
+
+  if (userStatus === 'pending' || userStatus === 'suspended') {
+    return res.json({
+      success: true,
+      data: {
+        total: 0,
+        unread: 0,
+        byType: {},
+        byPriority: {}
+      }
+    });
+  }
 
   const filter = {
     $or: [
       { receiverId: userId },
-      { receiverRole: userRole },
-      { receiverRole: 'all' }
+      { receiverId: null, receiverRole: userRole },
+      { receiverId: null, receiverRole: 'all' }
     ]
   };
 
