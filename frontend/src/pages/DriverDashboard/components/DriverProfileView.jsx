@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, Box, TextField,
-  Button, Alert, Snackbar, Alert as MuiAlert, Avatar
+  Button, Alert, Snackbar, Alert as MuiAlert, Avatar, Chip
 } from '@mui/material';
-import { Person as PersonIcon, Email, Phone, Badge as BadgeIcon } from '@mui/icons-material';
+import { Person as PersonIcon, Email, Phone, Badge as BadgeIcon, Lock as LockIcon } from '@mui/icons-material';
 import { authService } from '../../../services';
 
 const DriverProfileView = () => {
@@ -98,7 +98,17 @@ const DriverProfileView = () => {
               <PersonIcon sx={{ fontSize: 40 }} />
             </Avatar>
             <Typography variant="h6">{user?.name}</Typography>
-            <Typography variant="body2" color="text.secondary">Driver ID: {user?.employeeId || user?._id}</Typography>
+            {user?.licenseNumber && (
+              <Typography variant="body2" color="text.secondary">
+                License: {user.licenseNumber}
+              </Typography>
+            )}
+            <Chip
+              label="Driver"
+              size="small"
+              color="primary"
+              sx={{ mt: 1 }}
+            />
           </Box>
 
           <form onSubmit={handleSubmit}>
@@ -109,9 +119,17 @@ const DriverProfileView = () => {
                   label="Full Name"
                   name="name"
                   value={formData.name}
-                  onChange={handleInputChange}
+                  disabled
                   InputProps={{
-                    startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.active' }} />,
+                    startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
+                    endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                  }}
+                  helperText="Name cannot be changed. Contact admin to update."
+                  sx={{
+                    '& .MuiInputBase-input.Mui-disabled': {
+                      WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
+                      color: 'rgba(0, 0, 0, 0.6)',
+                    },
                   }}
                 />
               </Grid>
@@ -149,9 +167,17 @@ const DriverProfileView = () => {
                   label="License Number"
                   name="licenseNumber"
                   value={formData.licenseNumber}
-                  onChange={handleInputChange}
+                  disabled
                   InputProps={{
-                    startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.active' }} />,
+                    startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.disabled' }} />,
+                    endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                  }}
+                  helperText="License number cannot be changed. Contact admin to update."
+                  sx={{
+                    '& .MuiInputBase-input.Mui-disabled': {
+                      WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
+                      color: 'rgba(0, 0, 0, 0.6)',
+                    },
                   }}
                 />
               </Grid>

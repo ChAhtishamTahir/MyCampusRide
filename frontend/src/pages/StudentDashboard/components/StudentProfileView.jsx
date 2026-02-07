@@ -5,7 +5,7 @@ import {
   Tab, Tabs
 } from '@mui/material';
 import {
-  Person as PersonIcon, Email, Phone, Badge as BadgeIcon, CreditCard
+  Person as PersonIcon, Email, Phone, Badge as BadgeIcon, CreditCard, Lock as LockIcon
 } from '@mui/icons-material';
 import { authService } from '../../../services';
 import VirtualTransportCard from './VirtualTransportCard';
@@ -70,21 +70,20 @@ const StudentProfileView = () => {
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      
-      // Only update allowed fields
+
       const updateData = {
-        name: formData.name,
+        email: formData.email,
         phone: formData.phone
       };
-      
+
       await authService.updateProfile(updateData);
       showSnack('Profile updated successfully', 'success');
-      
-      // Update local user data
+
       setUser(prev => ({ ...prev, ...updateData }));
     } catch (error) {
       console.error('Error updating profile:', error);
-      showSnack('Failed to update profile', 'error');
+      const errorMessage = error.response?.data?.message || 'Failed to update profile';
+      showSnack(errorMessage, 'error');
     } finally {
       setSaving(false);
     }
@@ -177,9 +176,17 @@ const StudentProfileView = () => {
                     fullWidth
                     label="Full Name"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    disabled
                     InputProps={{
-                      startAdornment: <PersonIcon color="disabled" sx={{ mr: 1 }} />,
+                      startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
+                      endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                    }}
+                    helperText="Name cannot be changed. Contact admin to update."
+                    sx={{
+                      '& .MuiInputBase-input.Mui-disabled': {
+                        WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
+                        color: 'rgba(0, 0, 0, 0.6)',
+                      },
                     }}
                   />
                 </Grid>
@@ -188,11 +195,11 @@ const StudentProfileView = () => {
                     fullWidth
                     label="Email"
                     value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    type="email"
                     InputProps={{
-                      startAdornment: <Email color="disabled" sx={{ mr: 1 }} />,
+                      startAdornment: <Email sx={{ mr: 1, color: 'action.active' }} />,
                     }}
-                    disabled
-                    helperText="Email cannot be changed"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -202,7 +209,7 @@ const StudentProfileView = () => {
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     InputProps={{
-                      startAdornment: <Phone color="disabled" sx={{ mr: 1 }} />,
+                      startAdornment: <Phone sx={{ mr: 1, color: 'action.active' }} />,
                     }}
                   />
                 </Grid>
@@ -211,11 +218,18 @@ const StudentProfileView = () => {
                     fullWidth
                     label="Student ID"
                     value={formData.studentId}
-                    InputProps={{
-                      startAdornment: <BadgeIcon color="disabled" sx={{ mr: 1 }} />,
-                    }}
                     disabled
-                    helperText="Student ID cannot be changed"
+                    InputProps={{
+                      startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.disabled' }} />,
+                      endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                    }}
+                    helperText="Student ID cannot be changed. Contact admin to update."
+                    sx={{
+                      '& .MuiInputBase-input.Mui-disabled': {
+                        WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
+                        color: 'rgba(0, 0, 0, 0.6)',
+                      },
+                    }}
                   />
                 </Grid>
               </Grid>

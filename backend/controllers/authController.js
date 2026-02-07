@@ -205,12 +205,29 @@ const getMe = asyncHandler(async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private
 const updateProfile = asyncHandler(async (req, res) => {
-  const { name, phone } = req.body;
+  const { email, phone } = req.body;
   const userId = req.user._id;
+
+  const updateData = {};
+
+  if (email !== undefined) {
+    const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already in use by another account'
+      });
+    }
+    updateData.email = email;
+  }
+
+  if (phone !== undefined) {
+    updateData.phone = phone;
+  }
 
   const user = await User.findByIdAndUpdate(
     userId,
-    { name, phone },
+    updateData,
     { new: true, runValidators: true }
   );
 
