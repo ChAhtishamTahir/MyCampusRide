@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }) => {
 
       toast.error(errorMessage, {
         autoClose: 5000,
-        position: 'top-center'
+        position: 'top-right'
       });
 
       return { success: false, error: errorMessage };
