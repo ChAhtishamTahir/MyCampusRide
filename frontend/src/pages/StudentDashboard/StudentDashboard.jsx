@@ -1,3 +1,10 @@
+/**
+ * StudentDashboard Component - Main Student Portal Container
+ *
+ * This component manages the entire student portal interface with modern brand styling.
+ * Coordinates navigation, data loading, and view rendering for all student features.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
@@ -11,13 +18,26 @@ import StudentTrackingView from './components/StudentTrackingView';
 import StudentProfileView from './components/StudentProfileView';
 import VirtualTransportCard from './components/VirtualTransportCard';
 import NotificationPanel from '../../components/NotificationPanel';
+import { BACKGROUND_GRADIENTS } from './styles/brandStyles';
 
 const StudentDashboard = () => {
+  // Authentication and navigation
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // State for view management and student data
   const [activeView, setActiveView] = useState('overview');
   const [assignedBus, setAssignedBus] = useState(null);
   const [assignedRoute, setAssignedRoute] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  /**
+   * Toggle mobile drawer open/close state
+   * Used for responsive sidebar on smaller screens
+   */
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   useEffect(() => {
     loadStudentData();
@@ -82,10 +102,37 @@ const StudentDashboard = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-      <StudentSidebar activeView={activeView} setActiveView={setActiveView} user={user} logout={logout} navigate={navigate} />
-      <Box component="main" sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <StudentHeader activeView={activeView} />
+    // Main layout container with brand gradient background
+    <Box sx={{
+      display: 'flex',
+      // Gradient background matching landing page aesthetic
+      background: BACKGROUND_GRADIENTS.page,
+      minHeight: '100vh',
+    }}>
+      {/* Left Sidebar - Navigation with brand styling */}
+      <StudentSidebar
+        activeView={activeView}
+        setActiveView={setActiveView}
+        user={user}
+        logout={logout}
+        navigate={navigate}
+        mobileOpen={mobileOpen}
+        handleDrawerToggle={handleDrawerToggle}
+      />
+
+      {/* Main Content Area */}
+      <Box component="main" sx={{
+        flexGrow: 1,
+        overflow: 'auto',
+        transition: 'all 0.3s ease',
+      }}>
+        {/* Top Header with user info */}
+        <StudentHeader
+          activeView={activeView}
+          handleDrawerToggle={handleDrawerToggle}
+        />
+
+        {/* Dynamic view content */}
         {renderActiveView()}
       </Box>
     </Box>

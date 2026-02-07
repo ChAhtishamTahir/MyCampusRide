@@ -1,3 +1,15 @@
+/**
+ * StudentProfileView Component
+ *
+ * Student profile management interface with:
+ * - Personal Information tab with editable fields (email, phone)
+ * - Transport Card tab showing virtual card
+ * - Security tab for password change
+ * - Read-only fields for name and student ID
+ *
+ * Features brand styling with gradient accents.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Container, Card, CardContent, Typography, Box, Avatar, Grid,
@@ -10,6 +22,13 @@ import { authService } from '../../../services';
 import VirtualTransportCard from './VirtualTransportCard';
 import PasswordChangeForm from '../../../components/PasswordChangeForm';
 import { toast } from 'react-toastify';
+import {
+  BRAND_COLORS,
+  CARD_STYLES,
+  BORDER_RADIUS,
+  BUTTON_STYLES,
+  INPUT_STYLES,
+} from '../styles/brandStyles';
 
 const StudentProfileView = () => {
   const [user, setUser] = useState(null);
@@ -20,10 +39,15 @@ const StudentProfileView = () => {
   const [formData, setFormData] = useState({});
   const [activeTab, setActiveTab] = useState(0);
 
+  // Load user data on component mount
   useEffect(() => {
     loadUserData();
   }, []);
 
+  /**
+   * Load user profile data including assigned bus and route
+   * Populates form with current user information
+   */
   const loadUserData = async () => {
     try {
       setLoading(true);
@@ -57,10 +81,18 @@ const StudentProfileView = () => {
     }
   };
 
+  /**
+   * Handle form input changes
+   * Updates formData state with new values
+   */
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  /**
+   * Save profile changes to backend
+   * Only email and phone can be updated by student
+   */
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -83,12 +115,13 @@ const StudentProfileView = () => {
     }
   };
 
+  // Show loading state with brand color
   if (loading) {
     return (
-      <Container maxWidth="md" sx={{ p: 4, textAlign: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-          <CircularProgress size={24} />
-          <Typography variant="h6">Loading your profile...</Typography>
+      <Container maxWidth="md" sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <CircularProgress size={32} sx={{ color: BRAND_COLORS.skyBlue }} />
+          <Typography variant="h6" sx={{ color: BRAND_COLORS.slate700 }}>Loading your profile...</Typography>
         </Box>
       </Container>
     );
@@ -96,19 +129,57 @@ const StudentProfileView = () => {
 
   return (
     <Container maxWidth="lg" sx={{ p: 4 }}>
-      <Card>
+      {/* Profile Card with brand styling */}
+      <Card sx={{
+        ...CARD_STYLES.standard,
+        border: `1px solid ${BRAND_COLORS.slate300}`,
+      }}>
         <CardContent>
+          {/* Header with gradient icon */}
           <Box display="flex" alignItems="center" gap={2} mb={3}>
-            <PersonIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+            <Box sx={{
+              width: 56,
+              height: 56,
+              borderRadius: BORDER_RADIUS.xl,
+              background: BRAND_COLORS.primaryGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(14, 165, 233, 0.3)',
+            }}>
+              <PersonIcon sx={{ fontSize: 32, color: BRAND_COLORS.white }} />
+            </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>Profile</Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="h5" sx={{ fontWeight: 700, color: BRAND_COLORS.slate900 }}>
+                Profile
+              </Typography>
+              <Typography variant="body2" sx={{ color: BRAND_COLORS.slate600 }}>
                 Manage your personal information
               </Typography>
             </Box>
           </Box>
 
-          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+          {/* Tabs with brand styling */}
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            sx={{
+              mb: 3,
+              '& .MuiTab-root': {
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '1rem',
+                color: BRAND_COLORS.slate600,
+                '&.Mui-selected': {
+                  color: BRAND_COLORS.skyBlue,
+                },
+              },
+              '& .MuiTabs-indicator': {
+                background: BRAND_COLORS.primaryGradient,
+                height: 3,
+              },
+            }}
+          >
             <Tab label="Personal Information" />
             <Tab label="Transport Card" />
             <Tab label="Security" />
@@ -118,13 +189,29 @@ const StudentProfileView = () => {
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
                 <Box textAlign="center" mb={3}>
-                  <Avatar sx={{ width: 120, height: 120, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '2rem' }}>
-                    {user?.name?.charAt(0).toUpperCase() || 'S'}
-                  </Avatar>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {/* Avatar with gradient border */}
+                  <Box sx={{
+                    p: 0.5,
+                    borderRadius: '50%',
+                    background: BRAND_COLORS.primaryGradient,
+                    display: 'inline-flex',
+                    mb: 2,
+                  }}>
+                    <Avatar sx={{
+                      width: 120,
+                      height: 120,
+                      bgcolor: BRAND_COLORS.white,
+                      color: BRAND_COLORS.skyBlue,
+                      fontSize: '2.5rem',
+                      fontWeight: 700,
+                    }}>
+                      {user?.name?.charAt(0).toUpperCase() || 'S'}
+                    </Avatar>
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: BRAND_COLORS.slate900 }}>
                     {user?.name || 'Student'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: BRAND_COLORS.slate600 }}>
                     {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'User'}
                   </Typography>
                 </Box>
@@ -132,26 +219,26 @@ const StudentProfileView = () => {
 
               <Grid item xs={12} sm={6}>
                 <Box mb={2}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Typography variant="body2" sx={{ color: BRAND_COLORS.slate600, mb: 1 }}>
                     Student ID
                   </Typography>
                   <Box display="flex" alignItems="center" gap={1}>
-                    <BadgeIcon color="action" />
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    <BadgeIcon sx={{ color: BRAND_COLORS.skyBlue }} />
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: BRAND_COLORS.slate900 }}>
                       {user?.studentId || 'N/A'}
                     </Typography>
                   </Box>
                 </Box>
 
                 <Box mb={2}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                  <Typography variant="body2" sx={{ color: BRAND_COLORS.slate600, mb: 1 }}>
                     Fee Status
                   </Typography>
                   <Box display="flex" alignItems="center" gap={1}>
-                    <CreditCard color="action" />
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {user?.feeStatus === 'paid' ? 'Paid' : 
-                       user?.feeStatus === 'partially_paid' ? 'Partially Paid' : 
+                    <CreditCard sx={{ color: BRAND_COLORS.teal }} />
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: BRAND_COLORS.slate900 }}>
+                      {user?.feeStatus === 'paid' ? 'Paid' :
+                       user?.feeStatus === 'partially_paid' ? 'Partially Paid' :
                        'Pending'}
                     </Typography>
                   </Box>
@@ -174,6 +261,7 @@ const StudentProfileView = () => {
 
           {activeTab === 0 && (
             <>
+              {/* Editable Form Fields with brand styling */}
               <Grid container spacing={3} mt={1}>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -182,14 +270,15 @@ const StudentProfileView = () => {
                     value={formData.name}
                     disabled
                     InputProps={{
-                      startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                      endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                      startAdornment: <PersonIcon sx={{ mr: 1, color: BRAND_COLORS.slate500 }} />,
+                      endAdornment: <LockIcon sx={{ color: BRAND_COLORS.slate500, fontSize: 20 }} />,
                     }}
                     helperText="Name cannot be changed. Contact admin to update."
                     sx={{
+                      ...INPUT_STYLES.standard,
                       '& .MuiInputBase-input.Mui-disabled': {
-                        WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                        color: 'rgba(0, 0, 0, 0.6)',
+                        WebkitTextFillColor: BRAND_COLORS.slate600,
+                        color: BRAND_COLORS.slate600,
                       },
                     }}
                   />
@@ -202,8 +291,9 @@ const StudentProfileView = () => {
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     type="email"
                     InputProps={{
-                      startAdornment: <Email sx={{ mr: 1, color: 'action.active' }} />,
+                      startAdornment: <Email sx={{ mr: 1, color: BRAND_COLORS.skyBlue }} />,
                     }}
+                    sx={INPUT_STYLES.standard}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -213,8 +303,9 @@ const StudentProfileView = () => {
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     InputProps={{
-                      startAdornment: <Phone sx={{ mr: 1, color: 'action.active' }} />,
+                      startAdornment: <Phone sx={{ mr: 1, color: BRAND_COLORS.teal }} />,
                     }}
+                    sx={INPUT_STYLES.standard}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -224,25 +315,32 @@ const StudentProfileView = () => {
                     value={formData.studentId}
                     disabled
                     InputProps={{
-                      startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                      endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                      startAdornment: <BadgeIcon sx={{ mr: 1, color: BRAND_COLORS.slate500 }} />,
+                      endAdornment: <LockIcon sx={{ color: BRAND_COLORS.slate500, fontSize: 20 }} />,
                     }}
                     helperText="Student ID cannot be changed. Contact admin to update."
                     sx={{
+                      ...INPUT_STYLES.standard,
                       '& .MuiInputBase-input.Mui-disabled': {
-                        WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                        color: 'rgba(0, 0, 0, 0.6)',
+                        WebkitTextFillColor: BRAND_COLORS.slate600,
+                        color: BRAND_COLORS.slate600,
                       },
                     }}
                   />
                 </Grid>
               </Grid>
 
+              {/* Save Button with gradient styling */}
               <Box mt={3} textAlign="right">
                 <Button
                   variant="contained"
                   onClick={handleSaveProfile}
                   disabled={saving}
+                  sx={{
+                    ...BUTTON_STYLES.primary,
+                    px: 4,
+                    py: 1.5,
+                  }}
                 >
                   {saving ? (
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>

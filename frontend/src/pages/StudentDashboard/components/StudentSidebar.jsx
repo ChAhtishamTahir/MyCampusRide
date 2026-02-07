@@ -8,6 +8,12 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
+import {
+  BRAND_COLORS,
+  SIDEBAR_STYLES,
+  BORDER_RADIUS,
+  gradientText,
+} from '../styles/brandStyles';
 
 const drawerWidth = 280;
 
@@ -48,22 +54,50 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
 
   const drawerContent = (
     <>
-      <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+      {/* Brand Logo Section with gradient styling */}
+      <Box sx={{
+        p: 3,
+        borderBottom: `1px solid ${BRAND_COLORS.slate300}`
+      }}>
         <Box display="flex" alignItems="center" gap={1.5}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-            <Person />
-          </Avatar>
+          {/* Gradient Icon Box */}
+          <Box sx={{
+            width: 48,
+            height: 48,
+            borderRadius: BORDER_RADIUS.xl,
+            background: BRAND_COLORS.primaryGradient,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 16px rgba(14, 165, 233, 0.3)',
+          }}>
+            <Person sx={{ color: BRAND_COLORS.white, fontSize: 28 }} />
+          </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-              MyCampusRide
+            {/* Brand Name with gradient text */}
+            <Typography
+              variant="h6"
+              sx={{
+                ...SIDEBAR_STYLES.logo,
+                fontSize: '1.1rem',
+              }}
+            >
+              CampusRide
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              sx={{
+                color: BRAND_COLORS.slate600,
+                fontWeight: 500,
+              }}
+            >
               Student Portal
             </Typography>
           </Box>
         </Box>
       </Box>
 
+      {/* Navigation Menu Items with brand styling */}
       <List sx={{ px: 2, pt: 2 }}>
         {menuItems.map((item) => (
           <ListItem key={item.id} disablePadding>
@@ -71,13 +105,24 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
               onClick={() => handleMenuItemClick(item.id)}
               sx={{
                 mb: 0.5,
-                borderRadius: 2,
-                bgcolor: activeView === item.id ? 'primary.main' : 'transparent',
-                color: activeView === item.id ? 'white' : 'text.primary',
+                borderRadius: BORDER_RADIUS.md,
+                // Active state: gradient background with white text
+                ...(activeView === item.id && SIDEBAR_STYLES.menuItemActive),
+                // Inactive state: transparent background
+                bgcolor: activeView === item.id ? undefined : 'transparent',
+                color: activeView === item.id ? BRAND_COLORS.white : BRAND_COLORS.slate700,
+                fontWeight: activeView === item.id ? 600 : 500,
                 '&:hover': {
-                  bgcolor: activeView === item.id ? 'primary.dark' : 'action.hover',
+                  // Hover on active: slightly darker gradient
+                  ...(activeView === item.id ? {
+                    background: BRAND_COLORS.primaryGradientHover,
+                  } : {
+                    // Hover on inactive: light blue background with slide effect
+                    ...SIDEBAR_STYLES.menuItemHover,
+                    transform: 'translateX(4px)',
+                  }),
                 },
-                transition: 'all 0.2s ease',
+                transition: 'all 0.3s ease',
               }}
             >
               <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
@@ -85,42 +130,74 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
               </ListItemIcon>
               <ListItemText
                 primary={item.label}
-                primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
+                primaryTypographyProps={{
+                  fontWeight: activeView === item.id ? 600 : 500,
+                  fontSize: '0.95rem'
+                }}
               />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
 
+      {/* User Profile Section at bottom with brand styling */}
       <Box sx={{
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
         p: 2,
-        borderTop: '1px solid rgba(0,0,0,0.08)',
-        bgcolor: 'grey.50'
+        borderTop: `1px solid ${BRAND_COLORS.slate300}`,
+        bgcolor: BRAND_COLORS.slate100,
       }}>
         <Box display="flex" alignItems="center" gap={1.5}>
-          <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {user?.name?.charAt(0).toUpperCase() || 'S'}
-          </Avatar>
+          {/* User Avatar with gradient border */}
+          <Box sx={{
+            p: 0.35,
+            borderRadius: '50%',
+            background: BRAND_COLORS.primaryGradient,
+            display: 'flex',
+          }}>
+            <Avatar sx={{
+              bgcolor: BRAND_COLORS.white,
+              color: BRAND_COLORS.skyBlue,
+              fontWeight: 700,
+            }}>
+              {user?.name?.charAt(0).toUpperCase() || 'S'}
+            </Avatar>
+          </Box>
           <Box flex={1} minWidth={0}>
-            <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                color: BRAND_COLORS.slate900,
+              }}
+              noWrap
+            >
               {user?.name || 'Student'}
             </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography
+              variant="caption"
+              sx={{
+                color: BRAND_COLORS.slate600,
+              }}
+              noWrap
+            >
               {user?.email || 'N/A'}
             </Typography>
           </Box>
+          {/* Logout Button with brand error color */}
           <IconButton
             size="small"
             onClick={handleLogout}
             sx={{
-              color: 'error.main',
+              color: BRAND_COLORS.errorRed,
+              transition: 'all 0.3s ease',
               '&:hover': {
-                bgcolor: 'error.light',
-                color: 'white'
+                bgcolor: BRAND_COLORS.errorRed,
+                color: BRAND_COLORS.white,
+                transform: 'scale(1.1)',
               }
             }}
           >
@@ -133,6 +210,7 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
 
   return (
     <>
+      {/* Mobile Drawer: Temporary, slides in from left */}
       {isMobile ? (
         <Drawer
           variant="temporary"
@@ -144,25 +222,26 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
           sx={{
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
-              width: drawerWidth,
+              width: SIDEBAR_STYLES.width,
               boxSizing: 'border-box',
-              bgcolor: 'white',
+              bgcolor: BRAND_COLORS.white,
             },
           }}
         >
           {drawerContent}
         </Drawer>
       ) : (
+        /* Desktop Drawer: Permanent, always visible */
         <Drawer
           variant="permanent"
           sx={{
-            width: drawerWidth,
+            width: SIDEBAR_STYLES.width,
             flexShrink: 0,
             '& .MuiDrawer-paper': {
-              width: drawerWidth,
+              width: SIDEBAR_STYLES.width,
               boxSizing: 'border-box',
-              bgcolor: 'white',
-              borderRight: '1px solid rgba(0,0,0,0.08)',
+              bgcolor: BRAND_COLORS.white,
+              borderRight: `1px solid ${BRAND_COLORS.slate300}`,
             },
           }}
         >
