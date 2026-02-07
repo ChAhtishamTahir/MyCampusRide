@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config();
 
 const setActivatedAtForExistingUsers = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
 
     const activeUsers = await User.find({

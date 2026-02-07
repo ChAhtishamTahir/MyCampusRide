@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config();
 
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 
 async function migrateNotifications() {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/bus-tracking';
+    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/mycampusride';
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB');
 
