@@ -23,6 +23,7 @@ import {
   CardContent,
   Chip,
   IconButton,
+  LinearProgress,
 } from '@mui/material';
 import {
   PersonAdd,
@@ -98,6 +99,7 @@ const RegisterPage = () => {
   const [selectedBus, setSelectedBus] = useState(null);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [loadingBuses, setLoadingBuses] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ strength: '', valid: false });
 
   // Load routes on component mount
   useEffect(() => {
@@ -171,6 +173,14 @@ const RegisterPage = () => {
 
     if (name === 'routeNo') {
       newFormData.stopName = '';
+    }
+
+    if (name === 'password') {
+      const validation = validatePassword(value);
+      setPasswordStrength({
+        strength: validation.strength,
+        valid: validation.valid
+      });
     }
 
     setFormData(newFormData);
@@ -702,6 +712,52 @@ const RegisterPage = () => {
                     ),
                   }}
                 />
+                {formData.password && !fieldErrors.password && (
+                  <Box sx={{ mt: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={
+                          passwordStrength.strength === 'strong' ? 100 :
+                          passwordStrength.strength === 'medium' ? 66 :
+                          33
+                        }
+                        sx={{
+                          flex: 1,
+                          height: 6,
+                          borderRadius: 1,
+                          bgcolor: 'grey.200',
+                          '& .MuiLinearProgress-bar': {
+                            bgcolor:
+                              passwordStrength.strength === 'strong' ? 'success.main' :
+                              passwordStrength.strength === 'medium' ? 'warning.main' :
+                              'error.main',
+                          },
+                        }}
+                      />
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 600,
+                          color:
+                            passwordStrength.strength === 'strong' ? 'success.main' :
+                            passwordStrength.strength === 'medium' ? 'warning.main' :
+                            'error.main',
+                        }}
+                      >
+                        {passwordStrength.strength === 'strong' ? 'Strong' :
+                         passwordStrength.strength === 'medium' ? 'Medium' :
+                         'Weak'}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      {formData.password.length} characters
+                      {passwordStrength.strength === 'weak' && ' - Use 8+ for medium, 12+ for strong'}
+                      {passwordStrength.strength === 'medium' && ' - Use 12+ for strong password'}
+                      {passwordStrength.strength === 'strong' && ' - Excellent password!'}
+                    </Typography>
+                  </Box>
+                )}
               </Grid>
 
               <Grid item xs={12} sm={6}>

@@ -51,6 +51,25 @@ const LoginPage = () => {
     if (error) clearError();
   };
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    let validation;
+
+    if (name === 'email') {
+      validation = validateEmail(value);
+      setFieldErrors({
+        ...fieldErrors,
+        email: validation.error,
+      });
+    } else if (name === 'password') {
+      validation = validateRequired(value, 'Password');
+      setFieldErrors({
+        ...fieldErrors,
+        password: validation.error,
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -125,6 +144,7 @@ const LoginPage = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
+              onBlur={handleBlur}
               margin="normal"
               error={!!fieldErrors.email}
               helperText={fieldErrors.email}
@@ -145,6 +165,7 @@ const LoginPage = () => {
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
+              onBlur={handleBlur}
               margin="normal"
               error={!!fieldErrors.password}
               helperText={fieldErrors.password}
