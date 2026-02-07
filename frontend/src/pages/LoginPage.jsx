@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { validateEmail, validateRequired } from '../utils/validation';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -30,28 +31,51 @@ const LoginPage = () => {
     email: '',
     password: '',
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    email: '',
+    password: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
+    });
+    setFieldErrors({
+      ...fieldErrors,
+      [name]: '',
     });
     if (error) clearError();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const emailValidation = validateEmail(formData.email);
+    const passwordValidation = validateRequired(formData.password, 'Password');
+
+    const newFieldErrors = {
+      email: emailValidation.error,
+      password: passwordValidation.error,
+    };
+
+    setFieldErrors(newFieldErrors);
+
+    if (!emailValidation.valid || !passwordValidation.valid) {
+      return;
+    }
+
     setIsLoading(true);
 
     const result = await login(formData);
-    
+
     if (result.success) {
-      // Redirect based on user role
       navigate(`/${result.user.role}-dashboard`);
     }
-    
+
     setIsLoading(false);
   };
 
@@ -101,8 +125,9 @@ const LoginPage = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
-              required
               margin="normal"
+              error={!!fieldErrors.email}
+              helperText={fieldErrors.email}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -120,8 +145,9 @@ const LoginPage = () => {
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
-              required
               margin="normal"
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -156,7 +182,10 @@ const LoginPage = () => {
               }}
             >
               {isLoading ? (
-                <CircularProgress size={24} color="inherit" />
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                  <Typography>Signing you in...</Typography>
+                </Box>
               ) : (
                 'Sign In'
               )}

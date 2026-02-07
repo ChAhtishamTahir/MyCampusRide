@@ -1,7 +1,8 @@
-// Simple function to handle 401 errors (unauthorized)
+import { toast } from 'react-toastify';
+
 export const handleUnauthorized = () => {
+  toast.warning("Your session has expired for security. Please log in again.", { autoClose: 4000 });
   localStorage.removeItem('user');
-  // Redirect to login page
   window.location.href = '/login';
 };
 

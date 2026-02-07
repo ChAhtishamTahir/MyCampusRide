@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
   Drawer, Avatar, Typography, IconButton, useTheme, useMediaQuery
@@ -6,6 +6,8 @@ import {
 import {
   Dashboard, DirectionsBus, LocationOn, Person, Notifications, Logout
 } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
 
 const drawerWidth = 280;
 
@@ -20,10 +22,20 @@ const menuItems = [
 const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobileOpen, handleDrawerToggle }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = () => {
-    logout();
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    toast.success("You have been logged out successfully.");
     navigate('/');
+    setShowLogoutDialog(false);
+    setIsLoggingOut(false);
   };
 
   const handleMenuItemClick = (itemId) => {
@@ -156,6 +168,13 @@ const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobi
           {drawerContent}
         </Drawer>
       )}
+
+      <LogoutConfirmDialog
+        open={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={confirmLogout}
+        loading={isLoggingOut}
+      />
     </>
   );
 };

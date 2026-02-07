@@ -39,6 +39,7 @@ import {
 import { useNavigate, Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { routesAPI, busesAPI } from '../api/api';
+import { validateEmail, validatePassword, validatePhone, validateRequired, validateConfirmPassword } from '../utils/validation';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -65,12 +66,25 @@ const RegisterPage = () => {
     phone: '',
     studentId: '',
     licenseNumber: '',
-    // New fields for students
     routeNo: '',
     stopName: '',
     emergencyContact: '',
     address: '',
     feePaymentType: 'full',
+    customInstallment: '',
+  });
+  const [fieldErrors, setFieldErrors] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    studentId: '',
+    licenseNumber: '',
+    routeNo: '',
+    stopName: '',
+    emergencyContact: '',
+    address: '',
     customInstallment: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -144,18 +158,21 @@ const RegisterPage = () => {
   };
 
   const handleChange = (e) => {
-    const newValue = e.target.value;
+    const { name, value } = e.target;
     const newFormData = {
       ...formData,
-      [e.target.name]: newValue,
+      [name]: value,
     };
 
-    // If route changes, reset stop
-    if (e.target.name === 'routeNo') {
+    if (name === 'routeNo') {
       newFormData.stopName = '';
     }
 
     setFormData(newFormData);
+    setFieldErrors({
+      ...fieldErrors,
+      [name]: '',
+    });
     if (error) clearError();
     if (localError) setLocalError(null);
   };
@@ -176,40 +193,54 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setLocalError('Passwords do not match');
-      return;
+
+    const nameValidation = validateRequired(formData.name, 'Name');
+    const emailValidation = validateEmail(formData.email);
+    const phoneValidation = validatePhone(formData.phone);
+    const passwordValidation = validatePassword(formData.password);
+    const confirmPasswordValidation = validateConfirmPassword(formData.password, formData.confirmPassword);
+
+    const newFieldErrors = {
+      name: nameValidation.error,
+      email: emailValidation.error,
+      phone: phoneValidation.error,
+      password: passwordValidation.error,
+      confirmPassword: confirmPasswordValidation.error,
+      studentId: '',
+      licenseNumber: '',
+      routeNo: '',
+      stopName: '',
+      emergencyContact: '',
+      address: '',
+      customInstallment: '',
+    };
+
+    if (formData.role === 'student') {
+      const studentIdValidation = validateRequired(formData.studentId, 'Student ID');
+      const routeValidation = validateRequired(formData.routeNo, 'Route');
+      const stopValidation = validateRequired(formData.stopName, 'Stop');
+      const emergencyContactValidation = validatePhone(formData.emergencyContact);
+      const addressValidation = validateRequired(formData.address, 'Address');
+
+      newFieldErrors.studentId = studentIdValidation.error;
+      newFieldErrors.routeNo = routeValidation.error;
+      newFieldErrors.stopName = stopValidation.error;
+      newFieldErrors.emergencyContact = emergencyContactValidation.error;
+      newFieldErrors.address = addressValidation.error;
+
+      if (formData.feePaymentType === 'custom') {
+        const customInstallmentValidation = validateRequired(formData.customInstallment, 'Custom amount');
+        newFieldErrors.customInstallment = customInstallmentValidation.error;
+      }
+    } else if (formData.role === 'driver') {
+      const licenseValidation = validateRequired(formData.licenseNumber, 'License number');
+      newFieldErrors.licenseNumber = licenseValidation.error;
     }
 
-    if (formData.role === 'student' && !formData.studentId) {
-      setLocalError('Student ID is required');
-      return;
-    }
+    setFieldErrors(newFieldErrors);
 
-    if (formData.role === 'student' && !formData.routeNo) {
-      setLocalError('Please select a route');
-      return;
-    }
-
-    if (formData.role === 'student' && !formData.stopName) {
-      setLocalError('Please select a stop');
-      return;
-    }
-
-    if (formData.role === 'student' && !formData.emergencyContact) {
-      setLocalError('Emergency contact is required');
-      return;
-    }
-
-    if (formData.role === 'student' && !formData.address) {
-      setLocalError('Address is required');
-      return;
-    }
-
-    if (formData.role === 'driver' && !formData.licenseNumber) {
-      setLocalError('License number is required');
+    const hasErrors = Object.values(newFieldErrors).some(error => error !== '');
+    if (hasErrors) {
       return;
     }
 
@@ -307,7 +338,8 @@ const RegisterPage = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  required
+                  error={!!fieldErrors.name}
+                  helperText={fieldErrors.name}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -325,7 +357,8 @@ const RegisterPage = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  required
+                  error={!!fieldErrors.phone}
+                  helperText={fieldErrors.phone}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -344,7 +377,8 @@ const RegisterPage = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
+                  error={!!fieldErrors.email}
+                  helperText={fieldErrors.email}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -355,9 +389,8 @@ const RegisterPage = () => {
                 />
               </Grid>
 
-              {/* Role Selection */}
               <Grid item xs={12}>
-                <FormControl fullWidth required>
+                <FormControl fullWidth>
                   <InputLabel>Role</InputLabel>
                   <Select
                     name="role"
@@ -382,7 +415,8 @@ const RegisterPage = () => {
                       name="studentId"
                       value={formData.studentId}
                       onChange={handleChange}
-                      required
+                      error={!!fieldErrors.studentId}
+                      helperText={fieldErrors.studentId}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
@@ -401,7 +435,7 @@ const RegisterPage = () => {
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth required>
+                    <FormControl fullWidth error={!!fieldErrors.routeNo}>
                       <InputLabel>Route No</InputLabel>
                       <Select
                         name="routeNo"
@@ -416,11 +450,16 @@ const RegisterPage = () => {
                           </MenuItem>
                         ))}
                       </Select>
+                      {fieldErrors.routeNo && (
+                        <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
+                          {fieldErrors.routeNo}
+                        </Typography>
+                      )}
                     </FormControl>
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth required disabled={!formData.routeNo || stops.length === 0}>
+                    <FormControl fullWidth error={!!fieldErrors.stopName} disabled={!formData.routeNo || stops.length === 0}>
                       <InputLabel>Stop Name</InputLabel>
                       <Select
                         name="stopName"
@@ -434,6 +473,11 @@ const RegisterPage = () => {
                           </MenuItem>
                         ))}
                       </Select>
+                      {fieldErrors.stopName && (
+                        <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>
+                          {fieldErrors.stopName}
+                        </Typography>
+                      )}
                     </FormControl>
                   </Grid>
 
@@ -451,7 +495,8 @@ const RegisterPage = () => {
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      required
+                      error={!!fieldErrors.address}
+                      helperText={fieldErrors.address}
                       multiline
                       rows={2}
                       InputProps={{
@@ -471,7 +516,8 @@ const RegisterPage = () => {
                       name="emergencyContact"
                       value={formData.emergencyContact}
                       onChange={handleChange}
-                      required
+                      error={!!fieldErrors.emergencyContact}
+                      helperText={fieldErrors.emergencyContact}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
@@ -509,10 +555,10 @@ const RegisterPage = () => {
                         name="customInstallment"
                         value={formData.customInstallment}
                         onChange={handleChange}
-                        required
+                        error={!!fieldErrors.customInstallment}
+                        helperText={fieldErrors.customInstallment || "Custom payment plans require admin approval"}
                         sx={{ mt: 2 }}
                         type="number"
-                        helperText="Custom payment plans require admin approval"
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
@@ -602,7 +648,8 @@ const RegisterPage = () => {
                     name="licenseNumber"
                     value={formData.licenseNumber}
                     onChange={handleChange}
-                    required
+                    error={!!fieldErrors.licenseNumber}
+                    helperText={fieldErrors.licenseNumber}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -629,7 +676,8 @@ const RegisterPage = () => {
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required
+                  error={!!fieldErrors.password}
+                  helperText={fieldErrors.password}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -648,13 +696,8 @@ const RegisterPage = () => {
                   type="password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  required
-                  error={formData.password !== formData.confirmPassword && formData.confirmPassword !== ''}
-                  helperText={
-                    formData.password !== formData.confirmPassword && formData.confirmPassword !== ''
-                      ? 'Passwords do not match'
-                      : ''
-                  }
+                  error={!!fieldErrors.confirmPassword}
+                  helperText={fieldErrors.confirmPassword}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -665,14 +708,13 @@ const RegisterPage = () => {
                 />
               </Grid>
 
-              {/* Submit Button */}
               <Grid item xs={12}>
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
                   size="large"
-                  disabled={isLoading || formData.password !== formData.confirmPassword}
+                  disabled={isLoading}
                   sx={{
                     py: 1.5,
                     mb: 3,
@@ -680,7 +722,10 @@ const RegisterPage = () => {
                   }}
                 >
                   {isLoading ? (
-                    <CircularProgress size={24} color="inherit" />
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                      <Typography>Creating your account...</Typography>
+                    </Box>
                   ) : (
                     'Create Account'
                   )}

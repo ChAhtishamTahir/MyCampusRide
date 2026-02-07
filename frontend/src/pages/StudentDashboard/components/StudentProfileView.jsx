@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Card, CardContent, Typography, Box, Avatar, Grid,
-  TextField, Button, Alert, Snackbar, Alert as MuiAlert,
-  Tab, Tabs
+  TextField, Button, Tab, Tabs, CircularProgress
 } from '@mui/material';
 import {
   Person as PersonIcon, Email, Phone, Badge as BadgeIcon, CreditCard, Lock as LockIcon
 } from '@mui/icons-material';
 import { authService } from '../../../services';
 import VirtualTransportCard from './VirtualTransportCard';
+import { toast } from 'react-toastify';
 
 const StudentProfileView = () => {
   const [user, setUser] = useState(null);
@@ -17,7 +17,6 @@ const StudentProfileView = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({});
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
   const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
@@ -27,7 +26,7 @@ const StudentProfileView = () => {
   const loadUserData = async () => {
     try {
       setLoading(true);
-      
+
       const userResponse = await authService.getMe();
       const userData = userResponse.data.data || userResponse.data;
       setUser(userData);
@@ -38,12 +37,10 @@ const StudentProfileView = () => {
         studentId: userData.studentId || ''
       });
 
-      // Load assigned bus and route data from the populated user data
       if (userData?.assignedBus) {
         if (typeof userData.assignedBus === 'object' && userData.assignedBus._id) {
           setAssignedBus(userData.assignedBus);
-          
-          // Set route from populated bus data
+
           if (userData.assignedBus.routeId) {
             if (typeof userData.assignedBus.routeId === 'object') {
               setAssignedRoute(userData.assignedBus.routeId);
@@ -53,14 +50,10 @@ const StudentProfileView = () => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      showSnack('Failed to load profile data', 'error');
+      toast.error('Failed to load profile data');
     } finally {
       setLoading(false);
     }
-  };
-
-  const showSnack = (message, severity = 'success') => {
-    setSnack({ open: true, message, severity });
   };
 
   const handleInputChange = (field, value) => {
@@ -77,13 +70,13 @@ const StudentProfileView = () => {
       };
 
       await authService.updateProfile(updateData);
-      showSnack('Profile updated successfully', 'success');
+      toast.success('Your profile has been updated successfully. Changes are now active.');
 
       setUser(prev => ({ ...prev, ...updateData }));
     } catch (error) {
       console.error('Error updating profile:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update profile';
-      showSnack(errorMessage, 'error');
+      const errorMessage = error.response?.data?.message || 'Failed to update profile. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -92,7 +85,10 @@ const StudentProfileView = () => {
   if (loading) {
     return (
       <Container maxWidth="md" sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h6">Loading profile...</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+          <CircularProgress size={24} />
+          <Typography variant="h6">Loading your profile...</Typography>
+        </Box>
       </Container>
     );
   }
@@ -235,34 +231,25 @@ const StudentProfileView = () => {
               </Grid>
 
               <Box mt={3} textAlign="right">
-                <Button 
-                  variant="contained" 
-                  onClick={handleSaveProfile} 
+                <Button
+                  variant="contained"
+                  onClick={handleSaveProfile}
                   disabled={saving}
                 >
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                      <Typography>Saving your changes...</Typography>
+                    </Box>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
               </Box>
             </>
           )}
         </CardContent>
       </Card>
-
-      {/* Snackbar */}
-      <Snackbar 
-        open={snack.open} 
-        autoHideDuration={4000} 
-        onClose={() => setSnack(prev => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <MuiAlert 
-          onClose={() => setSnack(prev => ({ ...prev, open: false }))} 
-          severity={snack.severity} 
-          sx={{ width: '100%' }}
-        >
-          {snack.message}
-        </MuiAlert>
-      </Snackbar>
     </Container>
   );
 };

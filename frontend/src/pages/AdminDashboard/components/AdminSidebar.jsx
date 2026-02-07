@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
   Drawer, Avatar, Typography, IconButton, useTheme, useMediaQuery
@@ -7,6 +7,8 @@ import {
   People, DirectionsBus, Route as RouteIcon, Notifications,
   Security, Logout, Dashboard, Payment
 } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
 
 const drawerWidth = 280;
 
@@ -22,10 +24,20 @@ const menuItems = [
 const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobileOpen, handleDrawerToggle }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = () => {
-    logout();
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    toast.success("You have been logged out successfully.");
     navigate('/');
+    setShowLogoutDialog(false);
+    setIsLoggingOut(false);
   };
 
   const handleMenuItemClick = (itemId) => {
@@ -158,6 +170,13 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
           {drawerContent}
         </Drawer>
       )}
+
+      <LogoutConfirmDialog
+        open={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={confirmLogout}
+        loading={isLoggingOut}
+      />
     </>
   );
 };

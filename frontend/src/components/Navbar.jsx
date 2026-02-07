@@ -23,6 +23,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import LogoutConfirmDialog from './LogoutConfirmDialog';
 
 const Navbar = () => {
   const { user, logout, isAdmin, isDriver, isStudent } = useAuth();
@@ -32,6 +34,8 @@ const Navbar = () => {
   
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -47,9 +51,17 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/');
+    setShowLogoutDialog(true);
     handleMenuClose();
+  };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    toast.success("You have been logged out successfully.");
+    navigate('/');
+    setShowLogoutDialog(false);
+    setIsLoggingOut(false);
   };
 
   const handleProfile = () => {
@@ -330,6 +342,13 @@ const Navbar = () => {
 
       {renderMenu}
       {renderMobileMenu}
+
+      <LogoutConfirmDialog
+        open={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={confirmLogout}
+        loading={isLoggingOut}
+      />
     </AppBar>
   );
 };

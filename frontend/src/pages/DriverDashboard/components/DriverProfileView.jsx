@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, Box, TextField,
-  Button, Alert, Snackbar, Alert as MuiAlert, Avatar, Chip
+  Button, Avatar, Chip, CircularProgress
 } from '@mui/material';
 import { Person as PersonIcon, Email, Phone, Badge as BadgeIcon, Lock as LockIcon } from '@mui/icons-material';
 import { authService } from '../../../services';
+import { toast } from 'react-toastify';
 
 const DriverProfileView = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({});
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     loadUserData();
@@ -22,7 +22,7 @@ const DriverProfileView = () => {
       setLoading(true);
       const response = await authService.getMe();
       const userData = response.data.data || response.data;
-      
+
       setUser(userData);
       setFormData({
         name: userData.name || '',
@@ -32,11 +32,7 @@ const DriverProfileView = () => {
       });
     } catch (err) {
       console.error('Error loading user data:', err);
-      setSnack({
-        open: true,
-        message: 'Failed to load user data',
-        severity: 'error'
-      });
+      toast.error('Failed to load user data');
     } finally {
       setLoading(false);
     }
@@ -54,37 +50,27 @@ const DriverProfileView = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      
+
       await authService.updateProfile(formData);
-      
-      setSnack({
-        open: true,
-        message: 'Profile updated successfully!',
-        severity: 'success'
-      });
-      
-      // Refresh user data
+
+      toast.success('Your profile has been updated successfully. Changes are now active.');
+
       loadUserData();
     } catch (err) {
       console.error('Error updating profile:', err);
-      setSnack({
-        open: true,
-        message: 'Failed to update profile',
-        severity: 'error'
-      });
+      toast.error('Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCloseSnack = () => {
-    setSnack({ open: false, message: '', severity: 'success' });
-  };
-
   if (loading) {
     return (
       <Container maxWidth="sm" sx={{ py: 4, textAlign: 'center' }}>
-        <Typography>Loading...</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+          <CircularProgress size={24} />
+          <Typography>Loading your profile...</Typography>
+        </Box>
       </Container>
     );
   }
@@ -190,28 +176,20 @@ const DriverProfileView = () => {
                   disabled={saving}
                   size="large"
                 >
-                  {saving ? 'Updating...' : 'Update Profile'}
+                  {saving ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                      <Typography>Saving your changes...</Typography>
+                    </Box>
+                  ) : (
+                    'Update Profile'
+                  )}
                 </Button>
               </Grid>
             </Grid>
           </form>
         </CardContent>
       </Card>
-
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnack}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <MuiAlert
-          onClose={handleCloseSnack}
-          severity={snack.severity}
-          sx={{ width: '100%' }}
-        >
-          {snack.message}
-        </MuiAlert>
-      </Snackbar>
     </Container>
   );
 };

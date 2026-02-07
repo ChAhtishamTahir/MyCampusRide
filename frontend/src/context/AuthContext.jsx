@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { authService } from '../services';
+import { toast } from 'react-toastify';
 
 // Initial state
 const initialState = {
@@ -137,13 +138,14 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(credentials);
       const { user } = response.data.data;
 
-      // Store user in localStorage only (token is in cookie)
       localStorage.setItem('user', JSON.stringify(user));
 
       dispatch({
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
         payload: { user },
       });
+
+      toast.success(`Welcome back, ${user.name}!`);
 
       return { success: true, user };
     } catch (error) {
@@ -163,13 +165,25 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.register(userData);
       const { user } = response.data.data;
 
-      // Store user in localStorage only (token is in cookie)
       localStorage.setItem('user', JSON.stringify(user));
 
       dispatch({
         type: AUTH_ACTIONS.REGISTER_SUCCESS,
         payload: { user },
       });
+
+      if (user.role === 'driver' && user.status === 'pending') {
+        toast.info(
+          `Registration successful! Your driver account is pending admin approval. You will receive notification once approved.`,
+          { autoClose: 6000 }
+        );
+      } else if (user.role === 'admin') {
+        toast.success(`Admin account created successfully! Welcome to MyCampusRide.`);
+      } else if (user.role === 'student') {
+        toast.success(`Welcome to MyCampusRide, ${user.name}! Your account has been created successfully.`);
+      } else {
+        toast.success(`Welcome to MyCampusRide, ${user.name}!`);
+      }
 
       return { success: true, user };
     } catch (error) {
