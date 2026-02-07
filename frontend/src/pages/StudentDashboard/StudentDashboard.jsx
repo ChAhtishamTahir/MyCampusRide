@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services';
 import StudentSidebar from './components/StudentSidebar';
 import StudentHeader from './components/StudentHeader';
 import StudentOverviewView from './components/StudentOverviewView';
@@ -26,18 +27,22 @@ const StudentDashboard = () => {
     if (!user) return;
 
     try {
-      // Load assigned bus and route data from the populated user data
-      if (user?.assignedBus) {
-        if (typeof user.assignedBus === 'object' && user.assignedBus._id) {
-          setAssignedBus(user.assignedBus);
-          
-          // Set route from populated bus data
-          if (user.assignedBus.routeId) {
-            if (typeof user.assignedBus.routeId === 'object') {
-              setAssignedRoute(user.assignedBus.routeId);
+      const userResponse = await authService.getMe();
+      const userData = userResponse.data.data || userResponse.data;
+
+      if (userData?.assignedBus) {
+        if (typeof userData.assignedBus === 'object' && userData.assignedBus._id) {
+          setAssignedBus(userData.assignedBus);
+
+          if (userData.assignedBus.routeId) {
+            if (typeof userData.assignedBus.routeId === 'object') {
+              setAssignedRoute(userData.assignedBus.routeId);
             }
           }
         }
+      } else {
+        setAssignedBus(null);
+        setAssignedRoute(null);
       }
     } catch (error) {
       console.error('Error loading student data:', error);

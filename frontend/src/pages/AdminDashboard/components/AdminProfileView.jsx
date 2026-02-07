@@ -53,6 +53,7 @@ const AdminProfileView = () => {
       setSaving(true);
 
       await authService.updateProfile({
+        name: formData.name,
         email: formData.email,
         phone: formData.phone
       });
@@ -123,17 +124,9 @@ const AdminProfileView = () => {
                       label="Full Name"
                       name="name"
                       value={formData.name}
-                      disabled
+                      onChange={handleInputChange}
                       InputProps={{
-                        startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                        endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
-                      }}
-                      helperText="Name cannot be changed."
-                      sx={{
-                        '& .MuiInputBase-input.Mui-disabled': {
-                          WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                          color: 'rgba(0, 0, 0, 0.6)',
-                        },
+                        startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.active' }} />,
                       }}
                     />
                   </Grid>

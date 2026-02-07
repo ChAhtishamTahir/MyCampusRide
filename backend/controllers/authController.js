@@ -205,10 +205,14 @@ const getMe = asyncHandler(async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private
 const updateProfile = asyncHandler(async (req, res) => {
-  const { email, phone } = req.body;
+  const { name, email, phone } = req.body;
   const userId = req.user._id;
 
   const updateData = {};
+
+  if (name !== undefined) {
+    updateData.name = name;
+  }
 
   if (email !== undefined) {
     const existingUser = await User.findOne({ email, _id: { $ne: userId } });

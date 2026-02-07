@@ -128,7 +128,7 @@ const PasswordChangeForm = () => {
         newPassword: formData.newPassword
       });
 
-      if (response.success) {
+      if (response.data?.success) {
         toast.success('Password updated successfully');
         setFormData({
           currentPassword: '',
@@ -137,7 +137,7 @@ const PasswordChangeForm = () => {
         });
         setTouched({});
       } else {
-        toast.error(response.message || 'Failed to change password');
+        toast.error(response.data?.message || 'Failed to change password');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to change password';

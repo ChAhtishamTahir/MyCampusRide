@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, Box, TextField,
-  Button, Avatar, Chip, CircularProgress
+  Button, Avatar, Chip, CircularProgress, Tab, Tabs
 } from '@mui/material';
 import { Person as PersonIcon, Email, Phone, Badge as BadgeIcon, Lock as LockIcon } from '@mui/icons-material';
 import { authService } from '../../../services';
@@ -13,6 +13,7 @@ const DriverProfileView = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({});
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     loadUserData();
@@ -67,7 +68,7 @@ const DriverProfileView = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="sm" sx={{ py: 4, textAlign: 'center' }}>
+      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
           <CircularProgress size={24} />
           <Typography>Loading your profile...</Typography>
@@ -77,122 +78,143 @@ const DriverProfileView = () => {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Card sx={{ mb: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Card>
         <CardContent>
-          <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
-            <Avatar sx={{ width: 96, height: 96, mb: 2, bgcolor: 'primary.main' }}>
-              <PersonIcon sx={{ fontSize: 40 }} />
-            </Avatar>
-            <Typography variant="h6">{user?.name}</Typography>
-            {user?.licenseNumber && (
+          <Box display="flex" alignItems="center" gap={2} mb={3}>
+            <PersonIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>Profile</Typography>
               <Typography variant="body2" color="text.secondary">
-                License: {user.licenseNumber}
+                Manage your account information
               </Typography>
-            )}
-            <Chip
-              label="Driver"
-              size="small"
-              color="primary"
-              sx={{ mt: 1 }}
-            />
+            </Box>
           </Box>
 
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Full Name"
-                  name="name"
-                  value={formData.name}
-                  disabled
-                  InputProps={{
-                    startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                    endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
-                  }}
-                  helperText="Name cannot be changed. Contact admin to update."
-                  sx={{
-                    '& .MuiInputBase-input.Mui-disabled': {
-                      WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                      color: 'rgba(0, 0, 0, 0.6)',
-                    },
-                  }}
-                />
-              </Grid>
+          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+            <Tab label="Personal Information" />
+            <Tab label="Security" />
+          </Tabs>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  InputProps={{
-                    startAdornment: <Email sx={{ mr: 1, color: 'action.active' }} />,
-                  }}
+          {activeTab === 0 && (
+            <>
+              <Box textAlign="center" mb={4}>
+                <Avatar sx={{ width: 120, height: 120, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '2rem' }}>
+                  {user?.name?.charAt(0).toUpperCase() || 'D'}
+                </Avatar>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {user?.name || 'Driver'}
+                </Typography>
+                <Chip
+                  label="Driver"
+                  size="small"
+                  color="primary"
+                  sx={{ mt: 1 }}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  InputProps={{
-                    startAdornment: <Phone sx={{ mr: 1, color: 'action.active' }} />,
-                  }}
-                />
-              </Grid>
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Full Name"
+                      name="name"
+                      value={formData.name}
+                      disabled
+                      InputProps={{
+                        startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
+                        endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                      }}
+                      helperText="Name cannot be changed. Contact admin to update."
+                      sx={{
+                        '& .MuiInputBase-input.Mui-disabled': {
+                          WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
+                          color: 'rgba(0, 0, 0, 0.6)',
+                        },
+                      }}
+                    />
+                  </Grid>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="License Number"
-                  name="licenseNumber"
-                  value={formData.licenseNumber}
-                  disabled
-                  InputProps={{
-                    startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                    endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
-                  }}
-                  helperText="License number cannot be changed. Contact admin to update."
-                  sx={{
-                    '& .MuiInputBase-input.Mui-disabled': {
-                      WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                      color: 'rgba(0, 0, 0, 0.6)',
-                    },
-                  }}
-                />
-              </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      InputProps={{
+                        startAdornment: <Email sx={{ mr: 1, color: 'action.active' }} />,
+                      }}
+                    />
+                  </Grid>
 
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  type="submit"
-                  disabled={saving}
-                  size="large"
-                >
-                  {saving ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-                      <Typography>Saving your changes...</Typography>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      InputProps={{
+                        startAdornment: <Phone sx={{ mr: 1, color: 'action.active' }} />,
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="License Number"
+                      name="licenseNumber"
+                      value={formData.licenseNumber}
+                      disabled
+                      InputProps={{
+                        startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.disabled' }} />,
+                        endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                      }}
+                      helperText="License number cannot be changed. Contact admin to update."
+                      sx={{
+                        '& .MuiInputBase-input.Mui-disabled': {
+                          WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
+                          color: 'rgba(0, 0, 0, 0.6)',
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Box textAlign="right">
+                      <Button
+                        variant="contained"
+                        type="submit"
+                        disabled={saving}
+                        size="large"
+                      >
+                        {saving ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                            <Typography>Saving your changes...</Typography>
+                          </Box>
+                        ) : (
+                          'Update Profile'
+                        )}
+                      </Button>
                     </Box>
-                  ) : (
-                    'Update Profile'
-                  )}
-                </Button>
-              </Grid>
-            </Grid>
-          </form>
+                  </Grid>
+                </Grid>
+              </form>
+            </>
+          )}
+
+          {activeTab === 1 && (
+            <Box py={3}>
+              <PasswordChangeForm />
+            </Box>
+          )}
         </CardContent>
       </Card>
-
-      <PasswordChangeForm />
     </Container>
   );
 };
