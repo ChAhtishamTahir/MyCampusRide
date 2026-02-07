@@ -4,11 +4,14 @@ import {
   Link, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem,
   LinearProgress, InputAdornment, IconButton
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import {
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  PersonAdd as PersonAddIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  ArrowBack,
+} from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../../utils/toast';
@@ -225,46 +228,145 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box sx={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      bgcolor: 'background.default',
-      py: 4
-    }}>
-      <Container component="main" maxWidth="xs">
-        <Card sx={{ boxShadow: 3 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              mb: 3
-            }}>
-              <Box sx={{
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        background: 'linear-gradient(180deg, #F0F9FF 0%, #FFFFFF 100%)',
+        py: 4,
+      }}
+    >
+      {/* Decorative gradient circles - matching landing page aesthetic */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: -100,
+          right: -100,
+          width: 400,
+          height: 400,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%)',
+          animation: 'float 6s ease-in-out infinite',
+        }}
+      />
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: -100,
+          left: -100,
+          width: 350,
+          height: 350,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(20, 184, 166, 0.15) 0%, transparent 70%)',
+          animation: 'float 8s ease-in-out infinite',
+        }}
+      />
+
+      <Container component="main" maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Back to home button */}
+        <Box sx={{ mb: 2 }}>
+          <IconButton
+            onClick={() => navigate('/')}
+            sx={{
+              color: '#0EA5E9',
+              '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.08)' },
+            }}
+          >
+            <ArrowBack />
+          </IconButton>
+        </Box>
+
+        {/* Brand logo/name */}
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.5px',
+            }}
+          >
+            CampusRide
+          </Typography>
+        </Box>
+
+        {/* Main card with enhanced styling */}
+        <Card
+          sx={{
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08)',
+            borderRadius: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
+            animation: 'fadeInUp 0.6s ease-out',
+          }}
+        >
+          <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
+            {/* Icon with gradient background - matching landing page style */}
+            <Box
+              sx={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2
-              }}>
-                <PersonAddIcon sx={{ fontSize: 30, color: 'white' }} />
+                mb: 4,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2,
+                  boxShadow: '0 8px 24px rgba(14, 165, 233, 0.3)',
+                }}
+              >
+                <PersonAddIcon sx={{ fontSize: 36, color: 'white' }} />
               </Box>
-              <Typography component="h1" variant="h5">
-                Create an account
+              <Typography
+                component="h1"
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  color: '#0F172A',
+                  mb: 0.5,
+                }}
+              >
+                Create Your Account
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#64748B',
+                  textAlign: 'center',
+                }}
+              >
+                Join CampusRide for seamless campus transportation
               </Typography>
             </Box>
 
+            {/* Error alert with brand styling */}
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert
+                severity="error"
+                sx={{
+                  mb: 3,
+                  borderRadius: '12px',
+                }}
+              >
                 {error}
               </Alert>
             )}
 
+            {/* Form with enhanced input styling */}
             <form onSubmit={handleSubmit}>
               <TextField
                 margin="normal"
@@ -279,6 +381,21 @@ const RegisterPage = () => {
                 onBlur={handleBlur}
                 error={touched.name && !!fieldErrors.name}
                 helperText={touched.name && fieldErrors.name}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
+                }}
               />
               <TextField
                 margin="normal"
@@ -292,6 +409,21 @@ const RegisterPage = () => {
                 onBlur={handleBlur}
                 error={touched.email && !!fieldErrors.email}
                 helperText={touched.email && fieldErrors.email}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
+                }}
               />
               <TextField
                 margin="normal"
@@ -313,11 +445,27 @@ const RegisterPage = () => {
                         onClick={() => setShowPassword(!showPassword)}
                         onMouseDown={(e) => e.preventDefault()}
                         edge="end"
+                        sx={{ color: '#64748B' }}
                       >
                         {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
                 }}
               />
 
@@ -331,16 +479,16 @@ const RegisterPage = () => {
                         flex: 1,
                         height: 8,
                         borderRadius: 4,
-                        bgcolor: '#e5e7eb',
+                        bgcolor: '#E2E8F0',
                         '& .MuiLinearProgress-bar': {
                           bgcolor: passwordStrength.color,
-                          borderRadius: 4
-                        }
+                          borderRadius: 4,
+                        },
                       }}
                     />
                     <Typography
                       variant="caption"
-                      sx={{ color: passwordStrength.color, fontWeight: 600, minWidth: 50 }}
+                      sx={{ color: passwordStrength.color, fontWeight: 600, minWidth: 60 }}
                     >
                       {passwordStrength.label}
                     </Typography>
@@ -349,13 +497,13 @@ const RegisterPage = () => {
                     {passwordRequirements.map((req, index) => (
                       <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         {req.met ? (
-                          <CheckCircleIcon sx={{ fontSize: 16, color: '#22c55e' }} />
+                          <CheckCircleIcon sx={{ fontSize: 16, color: '#10B981' }} />
                         ) : (
-                          <CancelIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+                          <CancelIcon sx={{ fontSize: 16, color: '#CBD5E1' }} />
                         )}
                         <Typography
                           variant="caption"
-                          sx={{ color: req.met ? '#22c55e' : '#6b7280' }}
+                          sx={{ color: req.met ? '#10B981' : '#64748B' }}
                         >
                           {req.text}
                         </Typography>
@@ -385,18 +533,34 @@ const RegisterPage = () => {
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         onMouseDown={(e) => e.preventDefault()}
                         edge="end"
+                        sx={{ color: '#64748B' }}
                       >
                         {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
                     </InputAdornment>
-                  )
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
                 }}
               />
 
               {formData.confirmPassword && formData.password === formData.confirmPassword && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: -1, mb: 1 }}>
-                  <CheckCircleIcon sx={{ fontSize: 16, color: '#22c55e' }} />
-                  <Typography variant="caption" sx={{ color: '#22c55e' }}>
+                  <CheckCircleIcon sx={{ fontSize: 16, color: '#10B981' }} />
+                  <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 500 }}>
                     Passwords match
                   </Typography>
                 </Box>
@@ -413,9 +577,42 @@ const RegisterPage = () => {
                 onBlur={handleBlur}
                 error={touched.phone && !!fieldErrors.phone}
                 helperText={touched.phone && fieldErrors.phone}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
+                }}
               />
 
-              <FormControl fullWidth margin="normal">
+              <FormControl
+                fullWidth
+                margin="normal"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
+                }}
+              >
                 <InputLabel id="role-select-label">Role</InputLabel>
                 <Select
                   labelId="role-select-label"
@@ -443,7 +640,26 @@ const RegisterPage = () => {
                   onBlur={handleBlur}
                   placeholder="e.g., FA23-BCS-123"
                   error={touched.studentId && !!fieldErrors.studentId}
-                  helperText={touched.studentId && fieldErrors.studentId ? fieldErrors.studentId : 'Format: FA/SP + 2 digits - BCS/BBA/BSE - 3 digits'}
+                  helperText={
+                    touched.studentId && fieldErrors.studentId
+                      ? fieldErrors.studentId
+                      : 'Format: FA/SP + 2 digits - BCS/BBA/BSE - 3 digits'
+                  }
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      '&:hover fieldset': {
+                        borderColor: '#0EA5E9',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#0EA5E9',
+                        borderWidth: '2px',
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#0EA5E9',
+                    },
+                  }}
                 />
               )}
 
@@ -459,6 +675,21 @@ const RegisterPage = () => {
                   onBlur={handleBlur}
                   error={touched.licenseNumber && !!fieldErrors.licenseNumber}
                   helperText={touched.licenseNumber && fieldErrors.licenseNumber}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      '&:hover fieldset': {
+                        borderColor: '#0EA5E9',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#0EA5E9',
+                        borderWidth: '2px',
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#0EA5E9',
+                    },
+                  }}
                 />
               )}
 
@@ -474,29 +705,119 @@ const RegisterPage = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   error={touched.adminSecretCode && !!fieldErrors.adminSecretCode}
-                  helperText={touched.adminSecretCode && fieldErrors.adminSecretCode ? fieldErrors.adminSecretCode : 'Enter the admin secret code to register'}
+                  helperText={
+                    touched.adminSecretCode && fieldErrors.adminSecretCode
+                      ? fieldErrors.adminSecretCode
+                      : 'Enter the admin secret code to register'
+                  }
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '12px',
+                      '&:hover fieldset': {
+                        borderColor: '#0EA5E9',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#0EA5E9',
+                        borderWidth: '2px',
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: '#0EA5E9',
+                    },
+                  }}
                 />
               )}
 
+              {/* Gradient button matching landing page */}
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2, py: 1.5 }}
                 disabled={loading}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  py: 1.5,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
+                  boxShadow: '0 8px 24px rgba(14, 165, 233, 0.35)',
+                  textTransform: 'none',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #0284C7 0%, #0F766E 100%)',
+                    boxShadow: '0 12px 32px rgba(14, 165, 233, 0.45)',
+                    transform: 'translateY(-2px)',
+                  },
+                  '&:disabled': {
+                    background: 'linear-gradient(135deg, #94A3B8 0%, #94A3B8 100%)',
+                    color: 'white',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Sign Up'}
+                {loading ? (
+                  <CircularProgress size={24} sx={{ color: 'white' }} />
+                ) : (
+                  'Create Account'
+                )}
               </Button>
 
+              {/* Link with brand color */}
               <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Link href="/login" variant="body2">
-                  {"Already have an account? Sign in"}
-                </Link>
+                <Typography variant="body2" sx={{ color: '#64748B' }}>
+                  Already have an account?{' '}
+                  <Link
+                    href="/login"
+                    sx={{
+                      color: '#0EA5E9',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Sign In
+                  </Link>
+                </Typography>
               </Box>
             </form>
           </CardContent>
         </Card>
+
+        {/* Footer text */}
+        <Box sx={{ textAlign: 'center', mt: 3 }}>
+          <Typography variant="caption" sx={{ color: '#64748B' }}>
+            By creating an account, you agree to our Terms of Service and Privacy Policy
+          </Typography>
+        </Box>
       </Container>
+
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0px);
+            }
+            50% {
+              transform: translateY(-20px);
+            }
+          }
+        `}
+      </style>
     </Box>
   );
 };

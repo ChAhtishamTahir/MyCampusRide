@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
   Box, Container, Card, CardContent, Typography, TextField, Button,
-  Link, Alert, CircularProgress
+  Link, Alert, CircularProgress, IconButton
 } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { Login as LoginIcon, ArrowBack } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '../../utils/toast';
@@ -116,47 +116,140 @@ const LoginPage = () => {
   };
 
   return (
-    <Box sx={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      bgcolor: 'background.default'
-    }}>
-      <Container component="main" maxWidth="xs">
-        <Card sx={{ boxShadow: 3 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              mb: 3
-            }}>
-              <Box sx={{
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        background: 'linear-gradient(180deg, #F0F9FF 0%, #FFFFFF 100%)',
+      }}
+    >
+      {/* Decorative gradient circles - matching landing page aesthetic */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: -100,
+          right: -100,
+          width: 400,
+          height: 400,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%)',
+          animation: 'float 6s ease-in-out infinite',
+        }}
+      />
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: -100,
+          left: -100,
+          width: 350,
+          height: 350,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(20, 184, 166, 0.15) 0%, transparent 70%)',
+          animation: 'float 8s ease-in-out infinite',
+        }}
+      />
+
+      <Container component="main" maxWidth="xs" sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Back to home button */}
+        <Box sx={{ mb: 2 }}>
+          <IconButton
+            onClick={() => navigate('/')}
+            sx={{
+              color: '#0EA5E9',
+              '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.08)' },
+            }}
+          >
+            <ArrowBack />
+          </IconButton>
+        </Box>
+
+        {/* Brand logo/name */}
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.5px',
+            }}
+          >
+            CampusRide
+          </Typography>
+        </Box>
+
+        {/* Main card with enhanced styling */}
+        <Card
+          sx={{
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08)',
+            borderRadius: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
+            animation: 'fadeInUp 0.6s ease-out',
+          }}
+        >
+          <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
+            {/* Icon with gradient background - matching landing page style */}
+            <Box
+              sx={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2
-              }}>
-                <LockOutlinedIcon sx={{ fontSize: 30, color: 'white' }} />
+                mb: 4,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: '18px',
+                  background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2,
+                  boxShadow: '0 8px 24px rgba(14, 165, 233, 0.3)',
+                }}
+              >
+                <LoginIcon sx={{ fontSize: 36, color: 'white' }} />
               </Box>
-              <Typography component="h1" variant="h5">
-                Sign in to your account
+              <Typography
+                component="h1"
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  color: '#0F172A',
+                  mb: 0.5,
+                }}
+              >
+                Welcome Back
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#64748B',
+                  textAlign: 'center',
+                }}
+              >
+                Sign in to access your campus transportation
               </Typography>
             </Box>
 
+            {/* Error alert with brand styling */}
             {error && (
               <Alert
                 severity="error"
                 sx={{
-                  mb: 2,
+                  mb: 3,
+                  borderRadius: '12px',
                   '& .MuiAlert-message': {
-                    width: '100%'
-                  }
+                    width: '100%',
+                  },
                 }}
                 role="alert"
                 aria-live="assertive"
@@ -165,6 +258,7 @@ const LoginPage = () => {
               </Alert>
             )}
 
+            {/* Form with enhanced input styling */}
             <form onSubmit={handleSubmit}>
               <TextField
                 margin="normal"
@@ -179,6 +273,21 @@ const LoginPage = () => {
                 onBlur={handleBlur}
                 error={touched.email && !!fieldErrors.email}
                 helperText={touched.email && fieldErrors.email}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
+                }}
               />
               <TextField
                 margin="normal"
@@ -193,27 +302,113 @@ const LoginPage = () => {
                 onBlur={handleBlur}
                 error={touched.password && !!fieldErrors.password}
                 helperText={touched.password && fieldErrors.password}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    '&:hover fieldset': {
+                      borderColor: '#0EA5E9',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#0EA5E9',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#0EA5E9',
+                  },
+                }}
               />
 
+              {/* Gradient button matching landing page */}
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2, py: 1.5 }}
                 disabled={loading}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  py: 1.5,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
+                  boxShadow: '0 8px 24px rgba(14, 165, 233, 0.35)',
+                  textTransform: 'none',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #0284C7 0%, #0F766E 100%)',
+                    boxShadow: '0 12px 32px rgba(14, 165, 233, 0.45)',
+                    transform: 'translateY(-2px)',
+                  },
+                  '&:disabled': {
+                    background: 'linear-gradient(135deg, #94A3B8 0%, #94A3B8 100%)',
+                    color: 'white',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Sign In'}
+                {loading ? (
+                  <CircularProgress size={24} sx={{ color: 'white' }} />
+                ) : (
+                  'Sign In'
+                )}
               </Button>
 
+              {/* Link with brand color */}
               <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Link href="/register" variant="body2">
-                  {"Don't have an account? Sign Up"}
-                </Link>
+                <Typography variant="body2" sx={{ color: '#64748B' }}>
+                  Don't have an account?{' '}
+                  <Link
+                    href="/register"
+                    sx={{
+                      color: '#0EA5E9',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    Sign Up
+                  </Link>
+                </Typography>
               </Box>
             </form>
           </CardContent>
         </Card>
+
+        {/* Footer text */}
+        <Box sx={{ textAlign: 'center', mt: 3 }}>
+          <Typography variant="caption" sx={{ color: '#64748B' }}>
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </Typography>
+        </Box>
       </Container>
+
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0px);
+            }
+            50% {
+              transform: translateY(-20px);
+            }
+          }
+        `}
+      </style>
     </Box>
   );
 };
