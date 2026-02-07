@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  AppBar, Toolbar, Typography, Button, Badge, IconButton, Popover
+  AppBar, Toolbar, Typography, Button, Badge, IconButton, Popover, useTheme, useMediaQuery
 } from '@mui/material';
-import { Refresh, Notifications, Send } from '@mui/icons-material';
+import { Refresh, Notifications, Send, Menu as MenuIcon } from '@mui/icons-material';
 import NotificationPanel from '../../../components/NotificationPanel';
 import SendNotificationModal from '../../../components/SendNotificationModal';
 import { notificationService } from '../../../services';
@@ -14,7 +14,9 @@ const menuItems = [
   { id: 'profile', label: 'Profile' },
 ];
 
-const DriverHeader = ({ activeView, user }) => {
+const DriverHeader = ({ activeView, user, handleDrawerToggle }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [refreshing, setRefreshing] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [sendNotificationOpen, setSendNotificationOpen] = useState(false);
@@ -22,36 +24,32 @@ const DriverHeader = ({ activeView, user }) => {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    // Simulate refresh - in real app, trigger actual data refresh
     setTimeout(() => setRefreshing(false), 1000);
   };
-  
+
   const handleNotificationClick = (event) => {
     setNotificationAnchorEl(event.currentTarget);
   };
-  
+
   const handleNotificationClose = () => {
     setNotificationAnchorEl(null);
   };
-  
+
   const handleSendNotificationOpen = () => {
     setSendNotificationOpen(true);
   };
-  
+
   const handleSendNotificationClose = () => {
     setSendNotificationOpen(false);
   };
-  
+
   const loadUnreadCount = async () => {
     try {
       const response = await notificationService.getNotificationStats();
-      // Assuming the API returns a count of unread notifications
       const stats = response.data;
-      // Update with actual field name from API response
       setUnreadCount(stats.unreadCount || 0);
     } catch (error) {
       console.error('Error loading notification stats:', error);
-      // Fallback to loading recent notifications to count unread
       try {
         const response = await notificationService.getNotifications({ limit: 50 });
         const notifications = response.data.data || [];
@@ -63,52 +61,52 @@ const DriverHeader = ({ activeView, user }) => {
       }
     }
   };
-  
-  // Function to manually refresh unread count
-  const refreshUnreadCount = () => {
-    loadUnreadCount();
-  };
 
   useEffect(() => {
     loadUnreadCount();
   }, []);
-  
+
   return (
     <>
-      <AppBar 
-        position="sticky" 
+      <AppBar
+        position="sticky"
         elevation={0}
-        sx={{ 
+        sx={{
           bgcolor: 'white',
           borderBottom: '1px solid rgba(0,0,0,0.08)'
         }}
       >
         <Toolbar>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1, color: 'text.primary' }}>
             {menuItems.find(item => item.id === activeView)?.label || 'Driver Dashboard'}
           </Typography>
-          {(user?.role === 'admin' || user?.role === 'driver') && (
-          <Button
-            variant="contained"
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              mr: 1
-            }}
-            startIcon={<Send />}
-            onClick={handleSendNotificationOpen}
-          >
-            Send Notification
-          </Button>
+          {!isMobile && (user?.role === 'admin' || user?.role === 'driver') && (
+            <Button
+              variant="contained"
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                mr: 1
+              }}
+              startIcon={<Send />}
+              onClick={handleSendNotificationOpen}
+            >
+              Send Notification
+            </Button>
           )}
-          
-          <SendNotificationModal
-            open={sendNotificationOpen}
-            onClose={handleSendNotificationClose}
-            user={user}
-          />
           <IconButton
             size="large"
             aria-label="show notifications"
@@ -120,23 +118,25 @@ const DriverHeader = ({ activeView, user }) => {
               <Notifications />
             </Badge>
           </IconButton>
-          <Button
-            variant="outlined"
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3
-            }}
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          {!isMobile && (
+            <Button
+              variant="outlined"
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3
+              }}
+              startIcon={<Refresh />}
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
-      
+
       <Popover
         open={Boolean(notificationAnchorEl)}
         anchorEl={notificationAnchorEl}
@@ -155,10 +155,11 @@ const DriverHeader = ({ activeView, user }) => {
           <NotificationPanel maxHeight={400} />
         </div>
       </Popover>
-      
+
       <SendNotificationModal
         open={sendNotificationOpen}
         onClose={handleSendNotificationClose}
+        user={user}
       />
     </>
   );

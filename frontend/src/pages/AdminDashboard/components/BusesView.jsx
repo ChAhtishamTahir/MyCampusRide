@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, Box, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Avatar, Chip, IconButton,
+  TableCell, TableContainer, TableHead, TableRow, IconButton,
   Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Select, MenuItem, FormControl, InputLabel, Snackbar, Alert as MuiAlert
+  Select, MenuItem, FormControl, InputLabel, Skeleton, Chip
 } from '@mui/material';
 import {
   DirectionsBus, Add, Edit, Delete
 } from '@mui/icons-material';
 import { busService, userService, routeService } from '../../../services';
+import { toast } from '../../../utils/toast';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 
 const BusesView = () => {
   const [buses, setBuses] = useState([]);
@@ -16,10 +18,10 @@ const BusesView = () => {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState(''); // 'add' or 'edit'
+  const [dialogMode, setDialogMode] = useState('');
   const [selectedBus, setSelectedBus] = useState(null);
   const [formData, setFormData] = useState({});
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, id: null });
 
   useEffect(() => {
     loadData();
@@ -33,29 +35,24 @@ const BusesView = () => {
         userService.getUsers({ limit: 100 }),
         routeService.getRoutes({ limit: 100 })
       ]);
-      
+
       setBuses((busesResponse.data && busesResponse.data.data) || []);
-      
-      // Filter drivers from users
+
       const driversList = (usersResponse.data && usersResponse.data.data) || [];
       setDrivers(driversList.filter(user => user.role === 'driver'));
-      
+
       setRoutes((routesResponse.data && routesResponse.data.data) || []);
     } catch (error) {
       console.error('Error loading data:', error);
-      showSnack('Error loading data', 'error');
+      toast.error('Error loading data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const showSnack = (message, severity = 'success') => {
-    setSnack({ open: true, message, severity });
-  };
-
   const openAddDialog = () => {
     setDialogMode('add');
-    setFormData({ capacity: 30, status: 'active' }); // Default capacity and status
+    setFormData({ capacity: 30, status: 'active' });
     setSelectedBus(null);
     setOpenDialog(true);
   };
@@ -63,23 +60,21 @@ const BusesView = () => {
   const openEditDialog = (bus) => {
     setDialogMode('edit');
     setSelectedBus(bus);
-    
-    // Prepare form data with proper handling of driverId and routeId
+
     const busData = { ...bus };
-    
-    // Ensure driverId and routeId are properly formatted for the form
+
     if (bus.driverId) {
       busData.driverId = typeof bus.driverId === 'object' ? bus.driverId._id : bus.driverId;
     } else {
       busData.driverId = '';
     }
-    
+
     if (bus.routeId) {
       busData.routeId = typeof bus.routeId === 'object' ? bus.routeId._id : bus.routeId;
     } else {
       busData.routeId = '';
     }
-    
+
     setFormData(busData);
     setOpenDialog(true);
   };
@@ -95,34 +90,31 @@ const BusesView = () => {
     try {
       if (dialogMode === 'add') {
         await busService.createBus(formData);
-        showSnack('Bus created');
+        toast.success('Bus created successfully!');
       } else if (dialogMode === 'edit') {
-        // Prepare update data
         const updateData = { ...formData };
-        
-        // Make sure driverId and routeId are properly set
+
         if (updateData.driverId === '') {
           updateData.driverId = null;
         }
         if (updateData.routeId === '') {
           updateData.routeId = null;
         }
-        
-        // Ensure status is properly formatted
+
         if (!updateData.status) {
           updateData.status = 'inactive';
         }
-        
+
         await busService.updateBus(selectedBus._id, updateData);
-        showSnack('Bus updated');
+        toast.success('Bus updated successfully!');
       }
-      
+
       closeDialog();
-      loadData(); // Reload data
+      loadData();
     } catch (error) {
       console.error('Error saving bus:', error);
-      const errorMessage = error.response?.data?.message || 'Operation failed';
-      showSnack(errorMessage, 'error');
+      const errorMessage = error.response?.data?.message || 'Operation failed. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -130,16 +122,19 @@ const BusesView = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleDeleteBus = async (busId) => {
-    if (window.confirm('Are you sure you want to delete this bus?')) {
-      try {
-        await busService.deleteBus(busId);
-        showSnack('Bus deleted');
-        loadData(); // Reload data
-      } catch (error) {
-        console.error('Error deleting bus:', error);
-        showSnack('Failed to delete bus', 'error');
-      }
+  const openDeleteDialog = (busId) => {
+    setConfirmDialog({ open: true, id: busId });
+  };
+
+  const handleDeleteBus = async () => {
+    try {
+      await busService.deleteBus(confirmDialog.id);
+      toast.success('Bus deleted successfully!');
+      setConfirmDialog({ open: false, id: null });
+      loadData();
+    } catch (error) {
+      console.error('Error deleting bus:', error);
+      toast.error('Failed to delete bus. Please try again.');
     }
   };
 
@@ -170,59 +165,84 @@ const BusesView = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {buses.map(bus => {
-                    // Properly format driver and route names for display
-                    let driverName = 'No driver';
-                    if (bus.driverId) {
-                      if (typeof bus.driverId === 'object') {
-                        driverName = bus.driverId.name;
-                      } else {
-                        // If driverId is a string, find the driver from our drivers list
-                        const driver = drivers.find(d => d._id === bus.driverId);
-                        driverName = driver ? driver.name : 'Unknown Driver';
-                      }
-                    }
-                    
-                    let routeName = 'No route';
-                    if (bus.routeId) {
-                      if (typeof bus.routeId === 'object') {
-                        routeName = bus.routeId.routeName;
-                      } else {
-                        // If routeId is a string, find the route from our routes list
-                        const route = routes.find(r => r._id === bus.routeId);
-                        routeName = route ? route.routeName : 'Unknown Route';
-                      }
-                    }
-                      
-                    return (
-                      <TableRow key={bus._id}>
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={2}>
-                            <DirectionsBus color="primary" />
-                            <Typography sx={{ fontWeight: 600 }}>{bus.busNumber}</Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          {driverName}
-                        </TableCell>
-                        <TableCell>
-                          {routeName}
-                        </TableCell>
-                        <TableCell>{bus.model || 'N/A'}</TableCell>
-                        <TableCell>{bus.year || 'N/A'}</TableCell>
-                        <TableCell>{bus.capacity || 'N/A'}</TableCell>
-                        <TableCell><Chip label={bus.status || 'inactive'} size="small" /></TableCell>
-                        <TableCell>
-                          <IconButton onClick={() => openEditDialog(bus)}>
-                            <Edit />
-                          </IconButton>
-                          <IconButton onClick={() => handleDeleteBus(bus._id)} color="error">
-                            <Delete />
-                          </IconButton>
-                        </TableCell>
+                  {loading ? (
+                    [...Array(5)].map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell><Skeleton variant="rectangular" height={40} /></TableCell>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                        <TableCell><Skeleton variant="text" /></TableCell>
+                        <TableCell><Skeleton variant="rectangular" height={20} width={60} /></TableCell>
+                        <TableCell><Skeleton variant="rectangular" height={30} width={80} /></TableCell>
                       </TableRow>
-                    );
-                  })}
+                    ))
+                  ) : buses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        <Box sx={{ py: 8, textAlign: 'center' }}>
+                          <DirectionsBus sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
+                          <Typography variant="h6" color="text.secondary" gutterBottom>
+                            No buses found
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" paragraph>
+                            Add your first bus to get started with campus transportation management
+                          </Typography>
+                          <Button variant="contained" startIcon={<Add />} onClick={openAddDialog}>
+                            Add Bus
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    buses.map(bus => {
+                      let driverName = 'No driver';
+                      if (bus.driverId) {
+                        if (typeof bus.driverId === 'object') {
+                          driverName = bus.driverId.name;
+                        } else {
+                          const driver = drivers.find(d => d._id === bus.driverId);
+                          driverName = driver ? driver.name : 'Unknown Driver';
+                        }
+                      }
+
+                      let routeName = 'No route';
+                      if (bus.routeId) {
+                        if (typeof bus.routeId === 'object') {
+                          routeName = bus.routeId.routeName;
+                        } else {
+                          const route = routes.find(r => r._id === bus.routeId);
+                          routeName = route ? route.routeName : 'Unknown Route';
+                        }
+                      }
+
+                      return (
+                        <TableRow key={bus._id}>
+                          <TableCell>
+                            <Box display="flex" alignItems="center" gap={2}>
+                              <DirectionsBus color="primary" />
+                              <Typography sx={{ fontWeight: 600 }}>{bus.busNumber}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>{driverName}</TableCell>
+                          <TableCell>{routeName}</TableCell>
+                          <TableCell>{bus.model || 'N/A'}</TableCell>
+                          <TableCell>{bus.year || 'N/A'}</TableCell>
+                          <TableCell>{bus.capacity || 'N/A'}</TableCell>
+                          <TableCell><Chip label={bus.status || 'inactive'} size="small" /></TableCell>
+                          <TableCell>
+                            <IconButton onClick={() => openEditDialog(bus)}>
+                              <Edit />
+                            </IconButton>
+                            <IconButton onClick={() => openDeleteDialog(bus._id)} color="error">
+                              <Delete />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -230,42 +250,45 @@ const BusesView = () => {
         </Card>
       </Grid>
 
-      {/* Add/Edit Bus Dialog */}
       <Dialog open={openDialog} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {dialogMode === 'add' ? 'Add Bus' : 'Edit Bus'}
         </DialogTitle>
         <DialogContent dividers>
           <Box display="grid" gap={2} mt={1}>
-            <TextField 
-              label="Bus Number" 
-              value={formData.busNumber || ''} 
-              onChange={(e) => handleFormChange('busNumber', e.target.value)} 
+            <TextField
+              label="Bus Number"
+              value={formData.busNumber || ''}
+              onChange={(e) => handleFormChange('busNumber', e.target.value)}
               required
+              helperText="Enter the bus number or identifier"
             />
-            <TextField 
-              label="Model" 
-              value={formData.model || ''} 
-              onChange={(e) => handleFormChange('model', e.target.value)} 
+            <TextField
+              label="Model"
+              value={formData.model || ''}
+              onChange={(e) => handleFormChange('model', e.target.value)}
+              helperText="Bus model (e.g., Mercedes-Benz, Toyota)"
             />
-            <TextField 
-              label="Year" 
-              type="number" 
-              value={formData.year || ''} 
-              onChange={(e) => handleFormChange('year', Number(e.target.value))} 
+            <TextField
+              label="Year"
+              type="number"
+              value={formData.year || ''}
+              onChange={(e) => handleFormChange('year', Number(e.target.value))}
+              helperText="Manufacturing year"
             />
-            <TextField 
-              label="Capacity" 
-              type="number" 
-              value={formData.capacity || ''} 
-              onChange={(e) => handleFormChange('capacity', Number(e.target.value))} 
+            <TextField
+              label="Capacity"
+              type="number"
+              value={formData.capacity || ''}
+              onChange={(e) => handleFormChange('capacity', Number(e.target.value))}
               required
+              helperText="Maximum passenger capacity"
             />
             <FormControl fullWidth>
               <InputLabel>Driver</InputLabel>
-              <Select 
-                value={formData.driverId || ''} 
-                label="Driver" 
+              <Select
+                value={formData.driverId || ''}
+                label="Driver"
                 onChange={(e) => handleFormChange('driverId', e.target.value)}
               >
                 <MenuItem value="">Unassigned</MenuItem>
@@ -278,9 +301,9 @@ const BusesView = () => {
             </FormControl>
             <FormControl fullWidth>
               <InputLabel>Route</InputLabel>
-              <Select 
-                value={formData.routeId || ''} 
-                label="Route" 
+              <Select
+                value={formData.routeId || ''}
+                label="Route"
                 onChange={(e) => handleFormChange('routeId', e.target.value)}
               >
                 <MenuItem value="">Unassigned</MenuItem>
@@ -293,9 +316,9 @@ const BusesView = () => {
             </FormControl>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
-              <Select 
-                value={formData.status || 'active'} 
-                label="Status" 
+              <Select
+                value={formData.status || 'active'}
+                label="Status"
                 onChange={(e) => handleFormChange('status', e.target.value)}
               >
                 <MenuItem value="active">Active</MenuItem>
@@ -312,21 +335,16 @@ const BusesView = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
-      <Snackbar 
-        open={snack.open} 
-        autoHideDuration={4000} 
-        onClose={() => setSnack(prev => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <MuiAlert 
-          onClose={() => setSnack(prev => ({ ...prev, open: false }))} 
-          severity={snack.severity} 
-          sx={{ width: '100%' }}
-        >
-          {snack.message}
-        </MuiAlert>
-      </Snackbar>
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title="Delete Bus"
+        message="Are you sure you want to delete this bus? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteBus}
+        onCancel={() => setConfirmDialog({ open: false, id: null })}
+        variant="danger"
+      />
     </Container>
   );
 };

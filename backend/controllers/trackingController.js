@@ -1,3 +1,14 @@
+/*
+ * Tracking Controller
+ *
+ * Handles real-time bus tracking operations:
+ * - Start trip (marks bus as on trip, sends notification to students)
+ * - Stop trip (marks bus as available, calculates trip duration)
+ * - Update bus location (real-time location updates during trip)
+ * - Get bus location (for students tracking their bus)
+ * - Get all bus locations (for admin dashboard map view)
+ */
+
 const Bus = require('../models/Bus');
 const Route = require('../models/Route');
 const Notification = require('../models/Notification');
@@ -11,7 +22,7 @@ const startTrip = asyncHandler(async (req, res) => {
 
   // Find driver's assigned bus
   const bus = await Bus.findOne({ driverId })
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
   
   if (!bus) {
     return res.status(404).json({
@@ -73,7 +84,7 @@ const stopTrip = asyncHandler(async (req, res) => {
 
   // Find driver's assigned bus
   const bus = await Bus.findOne({ driverId })
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
   
   if (!bus) {
     return res.status(404).json({
@@ -204,7 +215,7 @@ const getActiveBusLocations = asyncHandler(async (req, res) => {
     status: 'on_trip'
   })
     .populate('driverId', 'name phone')
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   const busLocations = activeBuses.map(bus => ({
     busId: bus._id,
@@ -233,11 +244,11 @@ const getSimulatedLocations = asyncHandler(async (req, res) => {
   if (routeId) {
     buses = await Bus.find({ routeId, isOnTrip: true })
       .populate('driverId', 'name phone')
-      .populate('routeId', 'routeName stops timings');
+      .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
   } else {
     buses = await Bus.find({ isOnTrip: true })
       .populate('driverId', 'name phone')
-      .populate('routeId', 'routeName stops timings');
+      .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
   }
 
   // Generate simulated locations along the route
@@ -303,7 +314,7 @@ const getMyTripStatus = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
 
   const bus = await Bus.findOne({ driverId })
-    .populate('routeId', 'routeName stops timings');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
   
   if (!bus) {
     return res.status(404).json({

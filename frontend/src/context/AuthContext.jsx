@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { authService } from '../services';
+import { toast } from 'react-toastify';
 
 // Initial state
 const initialState = {
@@ -137,7 +138,6 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(credentials);
       const { user } = response.data.data;
 
-      // Store user in localStorage only (token is in cookie)
       localStorage.setItem('user', JSON.stringify(user));
 
       dispatch({
@@ -147,11 +147,28 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
+      let errorMessage;
+
+      if (!error.response) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      } else if (error.response.status === 401) {
+        errorMessage = error.response.data?.message || 'Invalid email or password. Please check your credentials and try again.';
+      } else if (error.response.status === 403) {
+        errorMessage = 'Access denied. Please contact support if you believe this is an error.';
+      } else {
+        errorMessage = error.response.data?.message || 'Login failed. Please try again later.';
+      }
+
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: errorMessage,
       });
+
+      toast.error(errorMessage, {
+        autoClose: 5000,
+        position: 'top-right'
+      });
+
       return { success: false, error: errorMessage };
     }
   };
@@ -163,7 +180,6 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.register(userData);
       const { user } = response.data.data;
 
-      // Store user in localStorage only (token is in cookie)
       localStorage.setItem('user', JSON.stringify(user));
 
       dispatch({
@@ -171,13 +187,27 @@ export const AuthProvider = ({ children }) => {
         payload: { user },
       });
 
+      if (user.role === 'driver' && user.status === 'pending') {
+        toast.info(
+          `Registration successful! Your driver account is pending admin approval. You will receive notification once approved.`,
+          { autoClose: 6000 }
+        );
+      } else if (user.role === 'admin') {
+        toast.success(`Admin account created successfully! Welcome to MyCampusRide.`);
+      } else if (user.role === 'student') {
+        toast.success(`Welcome to MyCampusRide, ${user.name}! Your account has been created successfully.`);
+      } else {
+        toast.success(`Welcome to MyCampusRide, ${user.name}!`);
+      }
+
       return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
       dispatch({
         type: AUTH_ACTIONS.REGISTER_FAILURE,
         payload: errorMessage,
       });
+      toast.error(errorMessage);
       return { success: false, error: errorMessage };
     }
   };

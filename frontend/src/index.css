@@ -83,6 +83,49 @@ body {
   }
 }
 
+/* Toast notification customization */
+.Toastify__toast-container {
+  z-index: 9999;
+}
+
+.Toastify__toast--error {
+  background-color: #EF4444;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.Toastify__toast--error .Toastify__toast-icon svg {
+  fill: white;
+}
+
+.Toastify__toast--success {
+  background-color: #10B981;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.Toastify__toast--info {
+  background-color: #3B82F6;
+  color: white;
+  font-weight: 500;
+}
+
+.Toastify__toast--warning {
+  background-color: #F59E0B;
+  color: white;
+  font-weight: 500;
+}
+
+.Toastify__progress-bar--error {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.Toastify__progress-bar--success {
+  background: rgba(255, 255, 255, 0.8);
+}
+
 
 
 

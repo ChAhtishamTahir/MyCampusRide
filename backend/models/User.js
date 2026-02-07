@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
       return 'active';
     }
   },
+  activatedAt: {
+    type: Date,
+    required: false
+  },
   studentId: {
     type: String,
     required: function() {
@@ -59,6 +63,28 @@ const userSchema = new mongoose.Schema({
     required: function() {
       return this.role === 'student';
     }
+  },
+  // Fee Notes - Automatic log of all fee-related actions
+  // Stores a timestamped history of fee status changes, route assignments, and bus assignments
+  // Format: "Action by Admin Name on Date Time\n"
+  // Example: "Fee marked as paid by Admin John on Feb 5, 2024 10:30 AM\nAssigned to Route 1 by Admin John on Feb 5, 2024 10:35 AM"
+  feeNotes: {
+    type: String,
+    default: '',
+    required: false
+  },
+  // Fee Updated At - Timestamp of last fee-related update
+  // Automatically set whenever feeStatus, assignedRoute, or assignedBus changes
+  feeUpdatedAt: {
+    type: Date,
+    required: false
+  },
+  // Fee Updated By - Reference to the admin who made the last fee-related update
+  // Used to track which admin made changes for accountability
+  feeUpdatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
   },
   assignedRoute: {
     type: mongoose.Schema.Types.ObjectId,
@@ -126,11 +152,23 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
+  const needsPasswordHash = this.isModified('password');
+  const needsActivatedAt = (this.isNew && this.status === 'active' && !this.activatedAt) ||
+                           (this.isModified('status') && this.status === 'active' && !this.activatedAt);
+
+  if (!needsPasswordHash && !needsActivatedAt) return next();
+
   try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
+    if (needsPasswordHash) {
+      const salt = await bcrypt.genSalt(12);
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+
+    if (needsActivatedAt) {
+      this.activatedAt = new Date();
+      console.log(`[User Model] Setting activatedAt for user ${this.email} to ${this.activatedAt}`);
+    }
+
     next();
   } catch (error) {
     next(error);

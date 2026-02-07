@@ -3,12 +3,12 @@ import {
   Container, Grid, Card, CardContent, Typography, Box, TextField,
   Button, Avatar, Chip, CircularProgress, Tab, Tabs
 } from '@mui/material';
-import { Person as PersonIcon, Email, Phone, Badge as BadgeIcon, Lock as LockIcon } from '@mui/icons-material';
+import { Person as PersonIcon, Email, Phone, Lock as LockIcon } from '@mui/icons-material';
 import { authService } from '../../../services';
 import PasswordChangeForm from '../../../components/PasswordChangeForm';
 import { toast } from 'react-toastify';
 
-const DriverProfileView = () => {
+const AdminProfileView = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,8 +29,7 @@ const DriverProfileView = () => {
       setFormData({
         name: userData.name || '',
         email: userData.email || '',
-        phone: userData.phone || '',
-        licenseNumber: userData.licenseNumber || ''
+        phone: userData.phone || ''
       });
     } catch (err) {
       console.error('Error loading user data:', err);
@@ -53,14 +52,42 @@ const DriverProfileView = () => {
     try {
       setSaving(true);
 
-      await authService.updateProfile(formData);
+      // Validate name
+      if (!formData.name || formData.name.trim().length < 2 || formData.name.length > 50) {
+        toast.error('Name must be between 2 and 50 characters');
+        setSaving(false);
+        return;
+      }
+
+      // Validate email
+      const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast.error('Please enter a valid email address');
+        setSaving(false);
+        return;
+      }
+
+      // Validate phone
+      const phoneRegex = /^0\d{10}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        toast.error('Phone must be in format 03XXXXXXXXX (e.g., 03001234567)');
+        setSaving(false);
+        return;
+      }
+
+      await authService.updateProfile({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone
+      });
 
       toast.success('Your profile has been updated successfully. Changes are now active.');
 
       loadUserData();
     } catch (err) {
       console.error('Error updating profile:', err);
-      toast.error('Failed to update profile. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to update profile. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -68,7 +95,7 @@ const DriverProfileView = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
           <CircularProgress size={24} />
           <Typography>Loading your profile...</Typography>
@@ -86,7 +113,7 @@ const DriverProfileView = () => {
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 600 }}>Profile</Typography>
               <Typography variant="body2" color="text.secondary">
-                Manage your account information
+                Manage your account settings
               </Typography>
             </Box>
           </Box>
@@ -100,13 +127,13 @@ const DriverProfileView = () => {
             <>
               <Box textAlign="center" mb={4}>
                 <Avatar sx={{ width: 120, height: 120, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '2rem' }}>
-                  {user?.name?.charAt(0).toUpperCase() || 'D'}
+                  {user?.name?.charAt(0).toUpperCase() || 'A'}
                 </Avatar>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {user?.name || 'Driver'}
+                  {user?.name || 'Admin'}
                 </Typography>
                 <Chip
-                  label="Driver"
+                  label="Administrator"
                   size="small"
                   color="primary"
                   sx={{ mt: 1 }}
@@ -121,17 +148,9 @@ const DriverProfileView = () => {
                       label="Full Name"
                       name="name"
                       value={formData.name}
-                      disabled
+                      onChange={handleInputChange}
                       InputProps={{
-                        startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                        endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
-                      }}
-                      helperText="Name cannot be changed. Contact admin to update."
-                      sx={{
-                        '& .MuiInputBase-input.Mui-disabled': {
-                          WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                          color: 'rgba(0, 0, 0, 0.6)',
-                        },
+                        startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.active' }} />,
                       }}
                     />
                   </Grid>
@@ -159,27 +178,6 @@ const DriverProfileView = () => {
                       onChange={handleInputChange}
                       InputProps={{
                         startAdornment: <Phone sx={{ mr: 1, color: 'action.active' }} />,
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="License Number"
-                      name="licenseNumber"
-                      value={formData.licenseNumber}
-                      disabled
-                      InputProps={{
-                        startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                        endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
-                      }}
-                      helperText="License number cannot be changed. Contact admin to update."
-                      sx={{
-                        '& .MuiInputBase-input.Mui-disabled': {
-                          WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                          color: 'rgba(0, 0, 0, 0.6)',
-                        },
                       }}
                     />
                   </Grid>
@@ -219,4 +217,4 @@ const DriverProfileView = () => {
   );
 };
 
-export default DriverProfileView;
+export default AdminProfileView;

@@ -1,19 +1,21 @@
-// Simple function to handle 401 errors (unauthorized)
+import { toast } from 'react-toastify';
+
 export const handleUnauthorized = () => {
+  toast.warning("Your session has expired for security. Please log in again.", { autoClose: 4000 });
   localStorage.removeItem('user');
-  // Redirect to login page
   window.location.href = '/login';
 };
 
-// Simple function to make API requests with error handling
-export const makeApiRequest = async (requestFn) => {
+export const makeApiRequest = async (requestFn, options = {}) => {
+  const { skipAuthHandler = false } = options;
+
   try {
     const response = await requestFn();
     return response;
   } catch (error) {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !skipAuthHandler) {
       handleUnauthorized();
     }
-    throw error; // Re-throw the error so the calling function can handle it
+    throw error;
   }
 };

@@ -23,6 +23,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import LogoutConfirmDialog from './LogoutConfirmDialog';
 
 const Navbar = () => {
   const { user, logout, isAdmin, isDriver, isStudent } = useAuth();
@@ -32,6 +34,8 @@ const Navbar = () => {
   
   const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -47,18 +51,30 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/');
+    setShowLogoutDialog(true);
     handleMenuClose();
   };
 
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    await logout();
+    toast.success("You have been logged out successfully.");
+    navigate('/');
+    setShowLogoutDialog(false);
+    setIsLoggingOut(false);
+  };
+
   const handleProfile = () => {
-    // Navigate to profile page (if implemented)
+    if (isAdmin()) navigate('/admin-dashboard');
+    else if (isDriver()) navigate('/driver-dashboard');
+    else if (isStudent()) navigate('/student-dashboard');
     handleMenuClose();
   };
 
   const handleSettings = () => {
-    // Navigate to settings page (if implemented)
+    if (isAdmin()) navigate('/admin-dashboard');
+    else if (isDriver()) navigate('/driver-dashboard');
+    else if (isStudent()) navigate('/student-dashboard');
     handleMenuClose();
   };
 
@@ -194,21 +210,21 @@ const Navbar = () => {
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to users management */}}
+                  onClick={() => navigate('/admin-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Users
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to buses management */}}
+                  onClick={() => navigate('/admin-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Buses
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to routes management */}}
+                  onClick={() => navigate('/admin-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Routes
@@ -227,7 +243,7 @@ const Navbar = () => {
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to trip management */}}
+                  onClick={() => navigate('/driver-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   My Trips
@@ -246,7 +262,7 @@ const Navbar = () => {
                 </Button>
                 <Button
                   color="inherit"
-                  onClick={() => {/* Navigate to bus tracking */}}
+                  onClick={() => navigate('/student-dashboard')}
                   sx={{ fontWeight: 500 }}
                 >
                   Track Bus
@@ -265,7 +281,11 @@ const Navbar = () => {
           <IconButton
             size="large"
             color="inherit"
-            onClick={() => {/* Navigate to notifications */}}
+            onClick={() => {
+              if (isAdmin()) navigate('/admin-dashboard');
+              else if (isDriver()) navigate('/driver-dashboard');
+              else if (isStudent()) navigate('/student-dashboard');
+            }}
           >
             <Notifications />
           </IconButton>
@@ -322,6 +342,13 @@ const Navbar = () => {
 
       {renderMenu}
       {renderMobileMenu}
+
+      <LogoutConfirmDialog
+        open={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={confirmLogout}
+        loading={isLoggingOut}
+      />
     </AppBar>
   );
 };
