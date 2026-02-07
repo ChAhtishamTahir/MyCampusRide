@@ -145,15 +145,14 @@ export const AuthProvider = ({ children }) => {
         payload: { user },
       });
 
-      toast.success(`Welcome back, ${user.name}!`);
-
       return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
+      const errorMessage = error.response?.data?.message || 'Invalid email or password. Please try again.';
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: errorMessage,
       });
+      toast.error(errorMessage);
       return { success: false, error: errorMessage };
     }
   };
@@ -187,11 +186,12 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
       dispatch({
         type: AUTH_ACTIONS.REGISTER_FAILURE,
         payload: errorMessage,
       });
+      toast.error(errorMessage);
       return { success: false, error: errorMessage };
     }
   };

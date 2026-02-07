@@ -22,6 +22,7 @@ import {
   Card,
   CardContent,
   Chip,
+  IconButton,
 } from '@mui/material';
 import {
   PersonAdd,
@@ -35,6 +36,8 @@ import {
   DirectionsBus,
   AttachMoney,
   EventSeat,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -88,6 +91,8 @@ const RegisterPage = () => {
     customInstallment: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [routes, setRoutes] = useState([]);
   const [stops, setStops] = useState([]);
   const [selectedBus, setSelectedBus] = useState(null);
@@ -673,15 +678,26 @@ const RegisterPage = () => {
                   fullWidth
                   label="Password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleChange}
                   error={!!fieldErrors.password}
-                  helperText={fieldErrors.password}
+                  helperText={fieldErrors.password || 'Minimum 6 characters'}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
                       </InputAdornment>
                     ),
                   }}
@@ -693,7 +709,7 @@ const RegisterPage = () => {
                   fullWidth
                   label="Confirm Password"
                   name="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   error={!!fieldErrors.confirmPassword}
@@ -702,6 +718,17 @@ const RegisterPage = () => {
                     startAdornment: (
                       <InputAdornment position="start">
                         <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
                       </InputAdornment>
                     ),
                   }}
