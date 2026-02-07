@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { Person as PersonIcon, Email, Phone, Badge as BadgeIcon, Lock as LockIcon } from '@mui/icons-material';
 import { authService } from '../../../services';
+import PasswordChangeForm from '../../../components/PasswordChangeForm';
 import { toast } from 'react-toastify';
 
 const DriverProfileView = () => {
@@ -77,7 +78,7 @@ const DriverProfileView = () => {
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Card>
+      <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
             <Avatar sx={{ width: 96, height: 96, mb: 2, bgcolor: 'primary.main' }}>
@@ -119,7 +120,7 @@ const DriverProfileView = () => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -133,7 +134,7 @@ const DriverProfileView = () => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -146,7 +147,7 @@ const DriverProfileView = () => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -190,6 +191,8 @@ const DriverProfileView = () => {
           </form>
         </CardContent>
       </Card>
+
+      <PasswordChangeForm />
     </Container>
   );
 };

@@ -8,6 +8,7 @@ import {
 } from '@mui/icons-material';
 import { authService } from '../../../services';
 import VirtualTransportCard from './VirtualTransportCard';
+import PasswordChangeForm from '../../../components/PasswordChangeForm';
 import { toast } from 'react-toastify';
 
 const StudentProfileView = () => {
@@ -110,6 +111,7 @@ const StudentProfileView = () => {
           <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
             <Tab label="Personal Information" />
             <Tab label="Transport Card" />
+            <Tab label="Security" />
           </Tabs>
 
           {activeTab === 0 && (
@@ -161,6 +163,12 @@ const StudentProfileView = () => {
           {activeTab === 1 && (
             <Box display="flex" justifyContent="center" py={3}>
               <VirtualTransportCard user={user} assignedBus={assignedBus} assignedRoute={assignedRoute} />
+            </Box>
+          )}
+
+          {activeTab === 2 && (
+            <Box py={3}>
+              <PasswordChangeForm />
             </Box>
           )}
 

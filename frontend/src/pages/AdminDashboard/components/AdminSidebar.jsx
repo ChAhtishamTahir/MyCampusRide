@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   People, DirectionsBus, Route as RouteIcon, Notifications,
-  Security, Logout, Dashboard, Payment
+  Security, Logout, Dashboard, Payment, Person
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
@@ -19,6 +19,7 @@ const menuItems = [
   { id: 'routes', label: 'Routes', icon: <RouteIcon /> },
   { id: 'fee-management', label: 'Fee Management', icon: <Payment /> },
   { id: 'notifications', label: 'Notifications', icon: <Notifications /> },
+  { id: 'profile', label: 'Profile', icon: <Person /> },
 ];
 
 const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobileOpen, handleDrawerToggle }) => {

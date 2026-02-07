@@ -10,6 +10,7 @@ import BusesView from './components/BusesView';
 import RoutesView from './components/RoutesView';
 import FeeManagementView from './components/FeeManagementView';
 import NotificationsView from './components/NotificationsView';
+import AdminProfileView from './components/AdminProfileView';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -40,6 +41,8 @@ const AdminDashboard = () => {
         return <FeeManagementView />;
       case 'notifications':
         return <NotificationsView />;
+      case 'profile':
+        return <AdminProfileView />;
       default:
         return <OverviewView />;
     }
