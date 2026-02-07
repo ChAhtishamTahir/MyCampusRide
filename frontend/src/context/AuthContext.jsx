@@ -147,12 +147,28 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Invalid email or password. Please try again.';
+      let errorMessage;
+
+      if (!error.response) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      } else if (error.response.status === 401) {
+        errorMessage = error.response.data?.message || 'Invalid email or password. Please check your credentials and try again.';
+      } else if (error.response.status === 403) {
+        errorMessage = 'Access denied. Please contact support if you believe this is an error.';
+      } else {
+        errorMessage = error.response.data?.message || 'Login failed. Please try again later.';
+      }
+
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
         payload: errorMessage,
       });
-      toast.error(errorMessage);
+
+      toast.error(errorMessage, {
+        autoClose: 5000,
+        position: 'top-center'
+      });
+
       return { success: false, error: errorMessage };
     }
   };

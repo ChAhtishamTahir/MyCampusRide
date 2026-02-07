@@ -99,19 +99,17 @@ const LoginPage = () => {
           navigate('/', { replace: true });
         }
       } else {
-        const errorMsg = result.error || 'Login failed. Please try again.';
+        const errorMsg = result.error || 'Login failed. Please check your credentials and try again.';
         setError(errorMsg);
-        toast.error(errorMsg);
       }
     } catch (err) {
       let errorMsg;
       if (!err.response) {
         errorMsg = 'Unable to connect to server. Please check your internet connection.';
       } else {
-        errorMsg = err.response?.data?.message || 'Login failed. Please try again.';
+        errorMsg = err.response?.data?.message || 'Login failed. Please check your credentials and try again.';
       }
       setError(errorMsg);
-      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -152,7 +150,17 @@ const LoginPage = () => {
             </Box>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert
+                severity="error"
+                sx={{
+                  mb: 2,
+                  '& .MuiAlert-message': {
+                    width: '100%'
+                  }
+                }}
+                role="alert"
+                aria-live="assertive"
+              >
                 {error}
               </Alert>
             )}
