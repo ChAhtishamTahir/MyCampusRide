@@ -190,6 +190,13 @@ const updateUser = asyncHandler(async (req, res) => {
   // Build the update object
   const updateData = { name, email, phone, status, feeStatus, assignedRoute, assignedBus };
 
+  // Handle activatedAt when status changes to 'active'
+  // This is needed because findByIdAndUpdate bypasses the pre-save hook
+  if (status === 'active' && user.status !== 'active' && !user.activatedAt) {
+    updateData.activatedAt = new Date();
+    console.log(`[updateUser] Setting activatedAt for user ${user.email} to ${updateData.activatedAt}`);
+  }
+
   // If there were any fee-related changes, append to feeNotes
   if (feeNoteEntries.length > 0) {
     const newNote = feeNoteEntries.join('\n');
@@ -286,6 +293,8 @@ const approveDriver = asyncHandler(async (req, res) => {
   // Update driver status
   driver.status = 'active';
   await driver.save();
+
+  console.log(`[approveDriver] Driver ${driver.email} approved. activatedAt: ${driver.activatedAt}`);
 
   await Notification.createSystemNotification(
     'Account Approved',

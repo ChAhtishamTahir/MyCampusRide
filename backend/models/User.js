@@ -152,16 +152,21 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password') && !this.isModified('status')) return next();
+  const needsPasswordHash = this.isModified('password');
+  const needsActivatedAt = (this.isNew && this.status === 'active' && !this.activatedAt) ||
+                           (this.isModified('status') && this.status === 'active' && !this.activatedAt);
+
+  if (!needsPasswordHash && !needsActivatedAt) return next();
 
   try {
-    if (this.isModified('password')) {
+    if (needsPasswordHash) {
       const salt = await bcrypt.genSalt(12);
       this.password = await bcrypt.hash(this.password, salt);
     }
 
-    if (this.isModified('status') && this.status === 'active' && !this.activatedAt) {
+    if (needsActivatedAt) {
       this.activatedAt = new Date();
+      console.log(`[User Model] Setting activatedAt for user ${this.email} to ${this.activatedAt}`);
     }
 
     next();
