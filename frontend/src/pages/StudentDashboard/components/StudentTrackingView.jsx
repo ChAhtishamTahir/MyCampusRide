@@ -30,92 +30,86 @@ const StudentTrackingView = () => {
   const [user, setUser] = useState(null);
   const [assignedBus, setAssignedBus] = useState(null);
   const [busLocation, setBusLocation] = useState(null);
-  const [tripStatus, setTripStatus] = useState('idle'); // idle, on_trip, arrived
+  const [tripStatus, setTripStatus] = useState('idle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  /**
-   * Load tracking data and setup polling interval
-   * Auto-refreshes bus location every 30 seconds during active trips
-   */
   useEffect(() => {
+    let isMounted = true;
+
+    const loadTrackingData = async () => {
+      try {
+        if (!initialLoadComplete) {
+          setLoading(true);
+        }
+        setError(null);
+
+        const userResponse = await authService.getMe();
+        if (!isMounted) return;
+
+        const currentUser = userResponse.data.data;
+        setUser(currentUser);
+
+        if (currentUser?.assignedBus) {
+          if (typeof currentUser.assignedBus === 'object' && currentUser.assignedBus._id) {
+            setAssignedBus(currentUser.assignedBus);
+
+            try {
+              const tripStatusResponse = await trackingService.getMyTripStatus();
+              if (!isMounted) return;
+
+              const status = tripStatusResponse.data?.data?.status || 'idle';
+              setTripStatus(status);
+
+              if (status === 'on_trip') {
+                try {
+                  const locationResponse = await trackingService.getBusLocation(currentUser.assignedBus._id);
+                  if (isMounted) {
+                    setBusLocation(locationResponse.data?.data || null);
+                  }
+                } catch (locErr) {
+                  console.error('Failed to load bus location:', locErr);
+                }
+              }
+            } catch (err) {
+              console.error('Failed to check trip status:', err);
+              if (isMounted) setTripStatus('idle');
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        if (isMounted) setError('Failed to load tracking data');
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setInitialLoadComplete(true);
+        }
+      }
+    };
+
     loadTrackingData();
 
-    // Poll for bus location updates every 30 seconds if on a trip
-    const locationInterval = setInterval(() => {
-      if (assignedBus && tripStatus === 'on_trip') {
-        loadBusLocation();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!assignedBus?._id || tripStatus !== 'on_trip') return;
+
+    const locationInterval = setInterval(async () => {
+      try {
+        const locationResponse = await trackingService.getBusLocation(assignedBus._id);
+        setBusLocation(locationResponse.data?.data || null);
+      } catch (err) {
+        console.error('Failed to load bus location:', err);
       }
     }, 30000);
 
     return () => clearInterval(locationInterval);
-  }, [assignedBus, tripStatus]);
-
-  /**
-   * Load user data and assigned bus information
-   * Checks trip status if bus is assigned
-   */
-  const loadTrackingData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Get current user data
-      const userResponse = await authService.getMe();
-      const currentUser = userResponse.data.data;
-      setUser(currentUser);
-
-      // Load assigned bus
-      if (currentUser?.assignedBus) {
-        if (typeof currentUser.assignedBus === 'object' && currentUser.assignedBus._id) {
-          setAssignedBus(currentUser.assignedBus);
-          
-          // Check trip status
-          checkTripStatus();
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load tracking data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Check current trip status from backend
-   * Loads bus location if trip is active
-   */
-  const checkTripStatus = async () => {
-    try {
-      const tripStatusResponse = await trackingService.getMyTripStatus();
-      const status = tripStatusResponse.data?.data?.status || 'idle';
-      setTripStatus(status);
-
-      if (status === 'on_trip') {
-        loadBusLocation();
-      }
-    } catch (err) {
-      console.error('Failed to check trip status:', err);
-      setTripStatus('idle');
-    }
-  };
-
-  /**
-   * Fetch current bus location data
-   * Updates latitude, longitude, speed, and timestamp
-   */
-  const loadBusLocation = async () => {
-    try {
-      if (assignedBus?._id) {
-        const locationResponse = await trackingService.getBusLocation(assignedBus._id);
-        setBusLocation(locationResponse.data?.data || null);
-      }
-    } catch (err) {
-      console.error('Failed to load bus location:', err);
-      setBusLocation(null);
-    }
-  };
+  }, [assignedBus?._id, tripStatus]);
 
   // Show loading spinner with brand color
   if (loading) {
