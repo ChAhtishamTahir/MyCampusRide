@@ -23,7 +23,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 // @access  Private
 const getBuses = asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 10 } = req.query;
-  
+
   // Build filter object
   const filter = {};
   if (status) filter.status = status;
@@ -143,7 +143,7 @@ const createBus = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const updateBus = asyncHandler(async (req, res) => {
   const { busNumber, driverId, routeId, capacity, model, year, status } = req.body;
-  
+
   const bus = await Bus.findById(req.params.id);
   if (!bus) {
     return res.status(404).json({
@@ -174,8 +174,8 @@ const updateBus = asyncHandler(async (req, res) => {
     }
 
     // Check if driver is already assigned to another bus
-    const existingDriverBus = await Bus.findOne({ 
-      driverId, 
+    const existingDriverBus = await Bus.findOne({
+      driverId,
       _id: { $ne: req.params.id },
       status: { $ne: 'out_of_service' }
     });
@@ -198,13 +198,31 @@ const updateBus = asyncHandler(async (req, res) => {
     }
   }
 
+  // Handle student displacement if status changes
+  if (status) {
+    const isNonActive = ['maintenance', 'out_of_service', 'inactive'].includes(status);
+    const isActive = ['available', 'on_trip'].includes(status);
+
+    if (isNonActive) {
+      await User.updateMany(
+        { assignedBus: req.params.id },
+        { $set: { isDisplaced: true } }
+      );
+    } else if (isActive) {
+      await User.updateMany(
+        { assignedBus: req.params.id },
+        { $set: { isDisplaced: false } }
+      );
+    }
+  }
+
   // Update bus
   const updatedBus = await Bus.findByIdAndUpdate(
     req.params.id,
     { busNumber, driverId, routeId, capacity, model, year, status },
     { new: true, runValidators: true }
   ).populate('driverId', 'name email phone')
-   .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
+    .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
 
   res.json({
     success: true,
@@ -232,6 +250,18 @@ const deleteBus = asyncHandler(async (req, res) => {
       message: 'Cannot delete bus that is currently on a trip'
     });
   }
+
+  // Handle displaced students
+  // Unassign bus and mark as displaced
+  await User.updateMany(
+    { assignedBus: req.params.id },
+    {
+      $set: {
+        assignedBus: null,
+        isDisplaced: true
+      }
+    }
+  );
 
   await Bus.findByIdAndDelete(req.params.id);
 
@@ -273,9 +303,9 @@ const getBusesByRoute = asyncHandler(async (req, res) => {
 // @route   GET /api/buses/active
 // @access  Private
 const getActiveBuses = asyncHandler(async (req, res) => {
-  const buses = await Bus.find({ 
+  const buses = await Bus.find({
     status: 'available',
-    isActive: true 
+    isActive: true
   })
     .populate('driverId', 'name email phone')
     .populate('routeId', 'routeName stops departureTime estimatedDuration distance');

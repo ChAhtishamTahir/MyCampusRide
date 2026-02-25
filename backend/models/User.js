@@ -17,6 +17,10 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
+  profilePicture: {
+    type: String,
+    required: [true, 'Profile picture is required']
+  },
   password: {
     type: String,
     required: [true, 'Password is required'],
@@ -36,7 +40,7 @@ const userSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['active', 'pending', 'suspended'],
-    default: function() {
+    default: function () {
       if (this.role === 'admin') return 'active';
       if (this.role === 'driver') return 'pending';
       return 'active';
@@ -48,10 +52,10 @@ const userSchema = new mongoose.Schema({
   },
   studentId: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role === 'student';
     },
-    unique: function() {
+    unique: function () {
       return this.role === 'student';
     },
     sparse: true
@@ -60,9 +64,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['paid', 'partially_paid', 'pending'],
     default: 'pending',
-    required: function() {
+    required: function () {
       return this.role === 'student';
     }
+  },
+  isDisplaced: {
+    type: Boolean,
+    default: false,
+    required: false
   },
   // Fee Notes - Automatic log of all fee-related actions
   // Stores a timestamped history of fee status changes, route assignments, and bus assignments
@@ -98,7 +107,13 @@ const userSchema = new mongoose.Schema({
   },
   licenseNumber: {
     type: String,
-    required: function() {
+    required: function () {
+      return this.role === 'driver';
+    }
+  },
+  drivingLicenseFile: {
+    type: String,
+    required: function () {
       return this.role === 'driver';
     }
   },
@@ -117,7 +132,7 @@ const userSchema = new mongoose.Schema({
     required: false,
     match: [/^0\d{10}$/, 'Please enter a valid phone number (e.g., 03201033144)'],
     validate: {
-      validator: function(value) {
+      validator: function (value) {
         // If emergencyContact is provided, validate it
         return !value || /^0\d{10}$/.test(value);
       },
@@ -151,10 +166,10 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   const needsPasswordHash = this.isModified('password');
   const needsActivatedAt = (this.isNew && this.status === 'active' && !this.activatedAt) ||
-                           (this.isModified('status') && this.status === 'active' && !this.activatedAt);
+    (this.isModified('status') && this.status === 'active' && !this.activatedAt);
 
   if (!needsPasswordHash && !needsActivatedAt) return next();
 
@@ -176,12 +191,12 @@ userSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
 // Remove password from JSON output
-userSchema.methods.toJSON = function() {
+userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
   return user;

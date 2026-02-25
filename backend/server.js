@@ -48,6 +48,9 @@ app.use(express.urlencoded({ extended: true }));
 // This is used for authentication (storing JWT tokens in cookies)
 app.use(cookieParser());
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // API Routes Configuration
 // Each route file handles a specific domain of our application
 // All routes are prefixed with /api/ for better organization
@@ -94,15 +97,15 @@ const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/mycampusrid
 console.log('Connecting to MongoDB...');
 
 mongoose.connect(mongoUri)
-.then(() => {
-  console.log('✅ Connected to MongoDB successfully');
-})
-.catch((error) => {
-  // If connection fails, log the error and exit the application
-  // This prevents the server from running without a database connection
-  console.error('❌ MongoDB connection error:', error.message);
-  process.exit(1); // Exit code 1 indicates an error
-});
+  .then(() => {
+    console.log('✅ Connected to MongoDB successfully');
+  })
+  .catch((error) => {
+    // If connection fails, log the error and exit the application
+    // This prevents the server from running without a database connection
+    console.error('❌ MongoDB connection error:', error.message);
+    process.exit(1); // Exit code 1 indicates an error
+  });
 
 // Server Configuration
 // Use PORT from environment variables, or default to 5000 for local development

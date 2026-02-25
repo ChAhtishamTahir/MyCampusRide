@@ -13,7 +13,7 @@ import {
   SIDEBAR_STYLES,
   BORDER_RADIUS,
   gradientText,
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
 const drawerWidth = 280;
 
@@ -82,7 +82,7 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
                 fontSize: '1.1rem',
               }}
             >
-              CampusRide
+              MyCampusRide
             </Typography>
             <Typography
               variant="caption"
@@ -158,11 +158,14 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
             background: BRAND_COLORS.primaryGradient,
             display: 'flex',
           }}>
-            <Avatar sx={{
-              bgcolor: BRAND_COLORS.white,
-              color: BRAND_COLORS.skyBlue,
-              fontWeight: 700,
-            }}>
+            <Avatar
+              src={user?.profilePicture ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${user.profilePicture}` : undefined}
+              sx={{
+                bgcolor: BRAND_COLORS.white,
+                color: BRAND_COLORS.skyBlue,
+                fontWeight: 700,
+              }}
+            >
               {user?.name?.charAt(0).toUpperCase() || 'S'}
             </Avatar>
           </Box>

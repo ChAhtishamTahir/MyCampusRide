@@ -6,8 +6,9 @@ import {
   Select, MenuItem, FormControl, InputLabel, Skeleton, Chip
 } from '@mui/material';
 import {
-  DirectionsBus, Add, Edit, Delete
+  DirectionsBus, Add, Edit, Delete, Visibility
 } from '@mui/icons-material';
+import BusProfileDialog from './BusProfileDialog';
 import { busService, userService, routeService } from '../../../services';
 import { toast } from '../../../utils/toast';
 import ConfirmDialog from '../../../components/ConfirmDialog';
@@ -22,6 +23,8 @@ const BusesView = () => {
   const [selectedBus, setSelectedBus] = useState(null);
   const [formData, setFormData] = useState({});
   const [confirmDialog, setConfirmDialog] = useState({ open: false, id: null });
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [selectedProfileBus, setSelectedProfileBus] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -52,7 +55,7 @@ const BusesView = () => {
 
   const openAddDialog = () => {
     setDialogMode('add');
-    setFormData({ capacity: 30, status: 'active' });
+    setFormData({ capacity: 30, status: 'available' });
     setSelectedBus(null);
     setOpenDialog(true);
   };
@@ -124,6 +127,11 @@ const BusesView = () => {
 
   const openDeleteDialog = (busId) => {
     setConfirmDialog({ open: true, id: busId });
+  };
+
+  const openProfileDialog = (bus) => {
+    setSelectedProfileBus(bus);
+    setProfileOpen(true);
   };
 
   const handleDeleteBus = async () => {
@@ -232,6 +240,9 @@ const BusesView = () => {
                           <TableCell>{bus.capacity || 'N/A'}</TableCell>
                           <TableCell><Chip label={bus.status || 'inactive'} size="small" /></TableCell>
                           <TableCell>
+                            <IconButton onClick={() => openProfileDialog(bus)} color="primary">
+                              <Visibility />
+                            </IconButton>
                             <IconButton onClick={() => openEditDialog(bus)}>
                               <Edit />
                             </IconButton>
@@ -317,13 +328,14 @@ const BusesView = () => {
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
-                value={formData.status || 'active'}
+                value={formData.status || 'available'}
                 label="Status"
                 onChange={(e) => handleFormChange('status', e.target.value)}
               >
-                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="available">Available (Active)</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
                 <MenuItem value="maintenance">Maintenance</MenuItem>
+                <MenuItem value="out_of_service">Out of Service</MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -344,6 +356,12 @@ const BusesView = () => {
         onConfirm={handleDeleteBus}
         onCancel={() => setConfirmDialog({ open: false, id: null })}
         variant="danger"
+      />
+
+      <BusProfileDialog
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        bus={selectedProfileBus}
       />
     </Container>
   );

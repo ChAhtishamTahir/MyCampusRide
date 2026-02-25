@@ -27,7 +27,7 @@ import {
   CARD_STYLES,
   BORDER_RADIUS,
   SHADOWS
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
 const OverviewView = () => {
   // State for statistics data

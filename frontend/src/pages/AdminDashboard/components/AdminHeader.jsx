@@ -17,6 +17,7 @@ import {
   AppBar, Toolbar, Typography, Button, Badge, IconButton, Popover, useTheme, useMediaQuery
 } from '@mui/material';
 import { Refresh, Notifications, Menu as MenuIcon } from '@mui/icons-material';
+import { useLocation } from 'react-router-dom';
 import NotificationPanel from '../../../components/NotificationPanel';
 import { notificationService } from '../../../services';
 import {
@@ -25,34 +26,38 @@ import {
   glassmorphism,
   BORDER_RADIUS,
   SHADOWS
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
-// Menu item labels for displaying current view name
-const menuItems = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'users', label: 'Users' },
-  { id: 'buses', label: 'Buses' },
-  { id: 'routes', label: 'Routes' },
-  { id: 'fee-management', label: 'Fee Management' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'profile', label: 'Profile' },
-];
+// Path-to-label mapping for header title
+const pageTitles = {
+  '/admin': 'Overview',
+  '/admin/users': 'Users',
+  '/admin/buses': 'Buses',
+  '/admin/routes': 'Routes',
+  '/admin/fees': 'Fee Management',
+  '/admin/bus-assignment': 'Bus Assignment',
+  '/admin/displaced': 'Displaced Students',
+  '/admin/notifications': 'Notifications',
+  '/admin/profile': 'Profile',
+};
 
-const AdminHeader = ({ activeView, handleDrawerToggle }) => {
+const AdminHeader = ({ handleDrawerToggle, onRefresh }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const location = useLocation();
+  const currentTitle = pageTitles[location.pathname] || 'Admin Dashboard';
   const [refreshing, setRefreshing] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
   /**
    * Handle refresh button click
-   * Simulates data refresh with a brief delay
+   * Triggers actual data refresh via onRefresh callback
    */
   const handleRefresh = () => {
     setRefreshing(true);
-    // In a real application, trigger actual data refresh here
-    setTimeout(() => setRefreshing(false), 1000);
+    if (onRefresh) onRefresh();
+    setTimeout(() => setRefreshing(false), 800);
   };
 
   /**
@@ -147,7 +152,7 @@ const AdminHeader = ({ activeView, handleDrawerToggle }) => {
               color: BRAND_COLORS.slate900,
             }}
           >
-            {menuItems.find(item => item.id === activeView)?.label || 'Admin Dashboard'}
+            {currentTitle}
           </Typography>
 
           {/* Notification Button with Badge */}

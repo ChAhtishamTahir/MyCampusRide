@@ -56,7 +56,7 @@ const busSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['available', 'on_trip', 'maintenance', 'out_of_service'],
+    enum: ['available', 'on_trip', 'maintenance', 'out_of_service', 'inactive'],
     default: 'available'
   },
   model: {

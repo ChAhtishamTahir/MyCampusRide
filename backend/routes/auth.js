@@ -6,12 +6,18 @@ const {
   getMe,
   updateProfile,
   changePassword,
+  selectRoute,
   logout
 } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
+const upload = require('../middleware/fileUpload');
 
 // Public routes
-router.post('/register', register);
+// multer middleware handles optional file upload for driver registration and mandatory profile picture
+router.post('/register', upload.fields([
+  { name: 'profilePicture', maxCount: 1 },
+  { name: 'drivingLicense', maxCount: 1 }
+]), register);
 router.post('/login', login);
 router.post('/logout', logout);
 
@@ -19,5 +25,6 @@ router.post('/logout', logout);
 router.get('/me', authMiddleware, getMe);
 router.put('/profile', authMiddleware, updateProfile);
 router.put('/change-password', authMiddleware, changePassword);
+router.put('/select-route', authMiddleware, selectRoute);
 
 module.exports = router;

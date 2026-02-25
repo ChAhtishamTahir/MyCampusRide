@@ -24,7 +24,7 @@ import {
   CARD_STYLES,
   BORDER_RADIUS,
   SHADOWS,
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
 const StudentScheduleView = () => {
   const [user, setUser] = useState(null);

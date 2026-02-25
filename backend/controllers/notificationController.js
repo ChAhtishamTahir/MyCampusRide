@@ -295,6 +295,62 @@ const sendNotification = asyncHandler(async (req, res) => {
       await notification.populate('senderId', 'name email role');
       notifications.push(notification);
     }
+    else if (targetType === 'bus') {
+      const { busId } = req.body;
+
+      if (!busId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bus ID is required for bus-targeted notifications'
+        });
+      }
+
+      // Validate the bus exists and belongs to this driver
+      const bus = await Bus.findById(busId);
+      if (!bus) {
+        return res.status(404).json({
+          success: false,
+          message: 'Bus not found'
+        });
+      }
+
+      if (senderRole === 'driver' && bus.driverId.toString() !== senderId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only send alerts to students on your own bus'
+        });
+      }
+
+      // Find all students assigned to this bus
+      const students = await User.find({ assignedBus: busId, role: 'student', status: 'active' });
+
+      if (students.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No students assigned to this bus'
+        });
+      }
+
+      // Create individual notifications for each student
+      for (const student of students) {
+        const notification = await Notification.create({
+          title,
+          message,
+          type: type || 'warning',
+          senderRole,
+          senderId,
+          receiverRole: 'student',
+          receiverId: student._id,
+          priority: priority || 'medium',
+          relatedEntity: {
+            type: 'bus',
+            id: bus._id
+          }
+        });
+        await notification.populate('senderId', 'name email role');
+        notifications.push(notification);
+      }
+    }
     else if (targetType === 'all') {
       const notification = await Notification.create({
         title,
@@ -313,7 +369,7 @@ const sendNotification = asyncHandler(async (req, res) => {
     else {
       return res.status(400).json({
         success: false,
-        message: 'Invalid target type. Must be individual, role, or all'
+        message: 'Invalid target type. Must be individual, role, bus, or all'
       });
     }
 

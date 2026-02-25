@@ -20,30 +20,41 @@ import {
 } from '@mui/material';
 import {
   People, DirectionsBus, Route as RouteIcon, Notifications,
-  Security, Logout, Dashboard, Payment, Person
+  Security, Logout, Dashboard, Payment, Person, AirportShuttle, Warning
 } from '@mui/icons-material';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
-import { BRAND_COLORS, SIDEBAR_STYLES, gradientText, BORDER_RADIUS } from '../styles/brandStyles';
+import { BRAND_COLORS, SIDEBAR_STYLES, gradientText, BORDER_RADIUS } from '../../../styles/brandStyles';
 
 // Sidebar width constant (matches design system)
 const drawerWidth = SIDEBAR_STYLES.width;
 
 const menuItems = [
-  { id: 'overview', label: 'Overview', icon: <Dashboard /> },
-  { id: 'users', label: 'Users', icon: <People /> },
-  { id: 'buses', label: 'Buses', icon: <DirectionsBus /> },
-  { id: 'routes', label: 'Routes', icon: <RouteIcon /> },
-  { id: 'fee-management', label: 'Fee Management', icon: <Payment /> },
-  { id: 'notifications', label: 'Notifications', icon: <Notifications /> },
-  { id: 'profile', label: 'Profile', icon: <Person /> },
+  { path: '/admin', label: 'Overview', icon: <Dashboard /> },
+  { path: '/admin/users', label: 'Users', icon: <People /> },
+  { path: '/admin/buses', label: 'Buses', icon: <DirectionsBus /> },
+  { path: '/admin/routes', label: 'Routes', icon: <RouteIcon /> },
+  { path: '/admin/fees', label: 'Fee Management', icon: <Payment /> },
+  { path: '/admin/bus-assignment', label: 'Bus Assignment', icon: <AirportShuttle /> },
+  { path: '/admin/displaced', label: 'Displaced Students', icon: <Warning /> },
+  { path: '/admin/notifications', label: 'Notifications', icon: <Notifications /> },
+  { path: '/admin/profile', label: 'Profile', icon: <Person /> },
 ];
 
-const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobileOpen, handleDrawerToggle }) => {
+const AdminSidebar = ({ user, logout, navigate, mobileOpen, handleDrawerToggle }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const location = useLocation();
+  const nav = useNavigate();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Determine active menu item from current URL
+  const isActive = (path) => {
+    if (path === '/admin') return location.pathname === '/admin';
+    return location.pathname.startsWith(path);
+  };
 
   const handleLogout = () => {
     setShowLogoutDialog(true);
@@ -58,8 +69,8 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
     setIsLoggingOut(false);
   };
 
-  const handleMenuItemClick = (itemId) => {
-    setActiveView(itemId);
+  const handleMenuItemClick = (path) => {
+    nav(path);
     if (isMobile && handleDrawerToggle) {
       handleDrawerToggle();
     }
@@ -72,7 +83,7 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
     <>
       {/* Brand Logo Section - Matches landing page style */}
       <Box sx={{
-        p: 3,
+        p: 2,
         borderBottom: `1px solid ${BRAND_COLORS.slate300}`,
       }}>
         <Box display="flex" alignItems="center" gap={1.5}>
@@ -98,7 +109,7 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
                 fontSize: '1.1rem',
               }}
             >
-              CampusRide
+              MyCampusRide
             </Typography>
             <Typography
               variant="caption"
@@ -114,48 +125,46 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
       </Box>
 
       {/* Navigation Menu - Brand styled with gradient active states */}
-      <List sx={{ px: 2, pt: 2 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.id} disablePadding>
-            <ListItemButton
-              onClick={() => handleMenuItemClick(item.id)}
-              sx={{
-                mb: 0.5,
-                borderRadius: BORDER_RADIUS.md,
-                // Active state: gradient background (matching landing page CTAs)
-                background: activeView === item.id ? BRAND_COLORS.primaryGradient : 'transparent',
-                color: activeView === item.id ? BRAND_COLORS.white : BRAND_COLORS.slate700,
-                boxShadow: activeView === item.id ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none',
-                py: 1.5,
-                '&:hover': {
-                  // Hover state: light brand background
-                  bgcolor: activeView === item.id ? undefined : 'rgba(14, 165, 233, 0.08)',
-                  // Keep gradient on hover if active
-                  background: activeView === item.id ? BRAND_COLORS.primaryGradientHover : undefined,
-                  transform: 'translateX(4px)',
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {/* Icon with proper color inheritance */}
-              <ListItemIcon sx={{
-                minWidth: 40,
-                color: 'inherit',
-                transition: 'transform 0.2s ease',
-              }}>
-                {item.icon}
-              </ListItemIcon>
-              {/* Label with brand typography */}
-              <ListItemText
-                primary={item.label}
-                primaryTypographyProps={{
-                  fontWeight: activeView === item.id ? 700 : 600,
-                  fontSize: '0.95rem',
+      <List sx={{ px: 2, pt: 1 }}>
+        {menuItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <ListItem key={item.path} disablePadding>
+              <ListItemButton
+                onClick={() => handleMenuItemClick(item.path)}
+                sx={{
+                  mb: 0.25,
+                  borderRadius: BORDER_RADIUS.md,
+                  background: active ? BRAND_COLORS.primaryGradient : 'transparent',
+                  color: active ? BRAND_COLORS.white : BRAND_COLORS.slate700,
+                  boxShadow: active ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none',
+                  py: 1,
+                  '&:hover': {
+                    bgcolor: active ? undefined : 'rgba(14, 165, 233, 0.08)',
+                    background: active ? BRAND_COLORS.primaryGradientHover : undefined,
+                    transform: 'translateX(4px)',
+                  },
+                  transition: 'all 0.3s ease',
                 }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+              >
+                <ListItemIcon sx={{
+                  minWidth: 40,
+                  color: 'inherit',
+                  transition: 'transform 0.2s ease',
+                }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    fontWeight: active ? 700 : 600,
+                    fontSize: '0.95rem',
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
 
       {/* User Profile Section - Brand styled at bottom */}
@@ -176,12 +185,15 @@ const AdminSidebar = ({ activeView, setActiveView, user, logout, navigate, mobil
             borderRadius: '50%',
             background: BRAND_COLORS.primaryGradient,
           }}>
-            <Avatar sx={{
-              bgcolor: BRAND_COLORS.white,
-              color: BRAND_COLORS.skyBlue,
-              fontWeight: 700,
-              border: `2px solid ${BRAND_COLORS.white}`,
-            }}>
+            <Avatar
+              src={user?.profilePicture ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${user.profilePicture}` : undefined}
+              sx={{
+                bgcolor: BRAND_COLORS.white,
+                color: BRAND_COLORS.skyBlue,
+                fontWeight: 700,
+                border: `2px solid ${BRAND_COLORS.white}`,
+              }}
+            >
               {user?.name?.charAt(0).toUpperCase() || 'A'}
             </Avatar>
           </Box>

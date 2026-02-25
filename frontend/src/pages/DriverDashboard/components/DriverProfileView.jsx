@@ -1,12 +1,32 @@
+/**
+ * DriverProfileView Component
+ *
+ * Driver profile management with brand styling.
+ * Features gradient avatar border, brand-styled tabs,
+ * styled text fields, and gradient save button.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, Box, TextField,
   Button, Avatar, Chip, CircularProgress, Tab, Tabs
 } from '@mui/material';
-import { Person as PersonIcon, Email, Phone, Badge as BadgeIcon, Lock as LockIcon } from '@mui/icons-material';
+import {
+  Person as PersonIcon, Email, Phone, Badge as BadgeIcon, Lock as LockIcon
+} from '@mui/icons-material';
 import { authService } from '../../../services';
 import PasswordChangeForm from '../../../components/PasswordChangeForm';
 import { toast } from 'react-toastify';
+import {
+  BRAND_COLORS,
+  CARD_STYLES,
+  BORDER_RADIUS,
+  SHADOWS,
+  TYPOGRAPHY,
+  BUTTON_STYLES,
+  INPUT_STYLES,
+  gradientIconBox,
+} from '../../../styles/brandStyles';
 
 const DriverProfileView = () => {
   const [user, setUser] = useState(null);
@@ -14,6 +34,8 @@ const DriverProfileView = () => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({});
   const [activeTab, setActiveTab] = useState(0);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     loadUserData();
@@ -52,11 +74,8 @@ const DriverProfileView = () => {
     e.preventDefault();
     try {
       setSaving(true);
-
       await authService.updateProfile(formData);
-
       toast.success('Your profile has been updated successfully. Changes are now active.');
-
       loadUserData();
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -68,51 +87,103 @@ const DriverProfileView = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-          <CircularProgress size={24} />
-          <Typography>Loading your profile...</Typography>
-        </Box>
+      <Container maxWidth="lg" sx={{ py: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+        <CircularProgress size={48} sx={{ color: BRAND_COLORS.skyBlue }} />
       </Container>
     );
   }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Card>
+      <Card sx={{ ...CARD_STYLES.standard, border: `1px solid ${BRAND_COLORS.slate300}` }}>
         <CardContent>
+          {/* Card Header */}
           <Box display="flex" alignItems="center" gap={2} mb={3}>
-            <PersonIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+            <Box sx={gradientIconBox(BRAND_COLORS.primaryGradient, '0 4px 16px rgba(14, 165, 233, 0.3)')}>
+              <PersonIcon sx={{ color: BRAND_COLORS.white }} />
+            </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>Profile</Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="h5" sx={{ fontWeight: TYPOGRAPHY.weights.bold, color: BRAND_COLORS.slate900 }}>
+                Profile
+              </Typography>
+              <Typography variant="body2" sx={{ color: BRAND_COLORS.slate600 }}>
                 Manage your account information
               </Typography>
             </Box>
           </Box>
 
-          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+          {/* Brand-styled Tabs */}
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            sx={{
+              mb: 3,
+              '& .MuiTab-root': {
+                fontWeight: TYPOGRAPHY.weights.semibold,
+                textTransform: 'none',
+                fontSize: '1rem',
+                color: BRAND_COLORS.slate600,
+                '&.Mui-selected': {
+                  color: BRAND_COLORS.skyBlue,
+                },
+              },
+              '& .MuiTabs-indicator': {
+                background: BRAND_COLORS.primaryGradient,
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+              },
+            }}
+          >
             <Tab label="Personal Information" />
             <Tab label="Security" />
           </Tabs>
 
           {activeTab === 0 && (
             <>
+              {/* Profile Avatar with gradient border */}
               <Box textAlign="center" mb={4}>
-                <Avatar sx={{ width: 120, height: 120, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '2rem' }}>
-                  {user?.name?.charAt(0).toUpperCase() || 'D'}
-                </Avatar>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Box sx={{
+                  p: 0.5,
+                  borderRadius: '50%',
+                  background: BRAND_COLORS.primaryGradient,
+                  display: 'inline-flex',
+                  boxShadow: SHADOWS.buttonDefault,
+                }}>
+                  <Avatar
+                    src={user?.profilePicture ? `${API_URL}/${user.profilePicture}` : undefined}
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      bgcolor: BRAND_COLORS.white,
+                      color: BRAND_COLORS.skyBlue,
+                      fontSize: '2.5rem',
+                      fontWeight: TYPOGRAPHY.weights.bold,
+                      border: `3px solid ${BRAND_COLORS.white}`,
+                    }}
+                  >
+                    {user?.name?.charAt(0).toUpperCase() || 'D'}
+                  </Avatar>
+                </Box>
+                <Typography variant="h6" sx={{
+                  fontWeight: TYPOGRAPHY.weights.bold,
+                  color: BRAND_COLORS.slate900,
+                  mt: 2,
+                }}>
                   {user?.name || 'Driver'}
                 </Typography>
                 <Chip
                   label="Driver"
                   size="small"
-                  color="primary"
-                  sx={{ mt: 1 }}
+                  sx={{
+                    mt: 1,
+                    background: BRAND_COLORS.primaryGradient,
+                    color: BRAND_COLORS.white,
+                    fontWeight: TYPOGRAPHY.weights.semibold,
+                  }}
                 />
               </Box>
 
+              {/* Profile Form */}
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
@@ -123,14 +194,15 @@ const DriverProfileView = () => {
                       value={formData.name}
                       disabled
                       InputProps={{
-                        startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                        endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                        startAdornment: <PersonIcon sx={{ mr: 1, color: BRAND_COLORS.slate400 }} />,
+                        endAdornment: <LockIcon sx={{ color: BRAND_COLORS.slate400, fontSize: 20 }} />,
                       }}
                       helperText="Name cannot be changed. Contact admin to update."
                       sx={{
+                        ...INPUT_STYLES.standard,
                         '& .MuiInputBase-input.Mui-disabled': {
-                          WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                          color: 'rgba(0, 0, 0, 0.6)',
+                          WebkitTextFillColor: BRAND_COLORS.slate700,
+                          color: BRAND_COLORS.slate700,
                         },
                       }}
                     />
@@ -145,8 +217,9 @@ const DriverProfileView = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       InputProps={{
-                        startAdornment: <Email sx={{ mr: 1, color: 'action.active' }} />,
+                        startAdornment: <Email sx={{ mr: 1, color: BRAND_COLORS.skyBlue }} />,
                       }}
+                      sx={INPUT_STYLES.standard}
                     />
                   </Grid>
 
@@ -158,8 +231,9 @@ const DriverProfileView = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       InputProps={{
-                        startAdornment: <Phone sx={{ mr: 1, color: 'action.active' }} />,
+                        startAdornment: <Phone sx={{ mr: 1, color: BRAND_COLORS.skyBlue }} />,
                       }}
+                      sx={INPUT_STYLES.standard}
                     />
                   </Grid>
 
@@ -171,14 +245,15 @@ const DriverProfileView = () => {
                       value={formData.licenseNumber}
                       disabled
                       InputProps={{
-                        startAdornment: <BadgeIcon sx={{ mr: 1, color: 'action.disabled' }} />,
-                        endAdornment: <LockIcon sx={{ color: 'action.disabled', fontSize: 20 }} />,
+                        startAdornment: <BadgeIcon sx={{ mr: 1, color: BRAND_COLORS.slate400 }} />,
+                        endAdornment: <LockIcon sx={{ color: BRAND_COLORS.slate400, fontSize: 20 }} />,
                       }}
                       helperText="License number cannot be changed. Contact admin to update."
                       sx={{
+                        ...INPUT_STYLES.standard,
                         '& .MuiInputBase-input.Mui-disabled': {
-                          WebkitTextFillColor: 'rgba(0, 0, 0, 0.6)',
-                          color: 'rgba(0, 0, 0, 0.6)',
+                          WebkitTextFillColor: BRAND_COLORS.slate700,
+                          color: BRAND_COLORS.slate700,
                         },
                       }}
                     />
@@ -191,6 +266,11 @@ const DriverProfileView = () => {
                         type="submit"
                         disabled={saving}
                         size="large"
+                        sx={{
+                          ...BUTTON_STYLES.primary,
+                          px: 4,
+                          py: 1.5,
+                        }}
                       >
                         {saving ? (
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>

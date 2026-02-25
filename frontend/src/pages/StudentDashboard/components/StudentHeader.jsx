@@ -25,7 +25,7 @@ import {
   glassmorphism,
   BORDER_RADIUS,
   SHADOWS
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
 // Menu item labels for displaying current view name
 const menuItems = [
@@ -37,7 +37,7 @@ const menuItems = [
   { id: 'profile', label: 'Profile' },
 ];
 
-const StudentHeader = ({ activeView, handleDrawerToggle }) => {
+const StudentHeader = ({ activeView, handleDrawerToggle, onRefresh }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [refreshing, setRefreshing] = useState(false);
@@ -46,12 +46,12 @@ const StudentHeader = ({ activeView, handleDrawerToggle }) => {
 
   /**
    * Handle refresh button click
-   * Simulates data refresh with a brief delay
+   * Triggers actual data refresh via onRefresh callback
    */
   const handleRefresh = () => {
     setRefreshing(true);
-    // In a real application, trigger actual data refresh here
-    setTimeout(() => setRefreshing(false), 1000);
+    if (onRefresh) onRefresh();
+    setTimeout(() => setRefreshing(false), 800);
   };
 
   /**

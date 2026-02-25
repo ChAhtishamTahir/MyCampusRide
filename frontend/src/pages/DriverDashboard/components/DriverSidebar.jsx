@@ -1,19 +1,36 @@
+/**
+ * DriverSidebar Component
+ *
+ * Brand-styled sidebar navigation for the Driver Portal.
+ * Features gradient brand logo, active menu states with smooth transitions,
+ * profile section with gradient avatar border, and responsive drawer.
+ */
+
 import React, { useState } from 'react';
 import {
   Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
   Drawer, Avatar, Typography, IconButton, useTheme, useMediaQuery
 } from '@mui/material';
 import {
-  Dashboard, DirectionsBus, LocationOn, Person, Notifications, Logout
+  Dashboard, DirectionsBus, LocationOn, Person, Notifications, Logout, People
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
+import {
+  BRAND_COLORS,
+  SIDEBAR_STYLES,
+  BORDER_RADIUS,
+  SHADOWS,
+  TYPOGRAPHY,
+  glassmorphism,
+} from '../../../styles/brandStyles';
 
-const drawerWidth = 280;
+const drawerWidth = SIDEBAR_STYLES.width;
 
 const menuItems = [
   { id: 'overview', label: 'Overview', icon: <Dashboard /> },
-  { id: 'trips', label: 'My Trips', icon: <DirectionsBus /> },
+  { id: 'passengers', label: 'Passengers', icon: <People /> },
+  { id: 'trips', label: 'My Route', icon: <DirectionsBus /> },
   { id: 'tracking', label: 'Tracking', icon: <LocationOn /> },
   { id: 'notifications', label: 'Notifications', icon: <Notifications /> },
   { id: 'profile', label: 'Profile', icon: <Person /> },
@@ -45,70 +62,153 @@ const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobi
     }
   };
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   const drawerContent = (
-    <>
-      <Box sx={{ p: 3, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      ...glassmorphism(10, 0.98),
+      borderRight: `1px solid ${BRAND_COLORS.slate300}`,
+    }}>
+      {/* Brand Logo Section */}
+      <Box sx={{
+        p: 3,
+        borderBottom: `1px solid ${BRAND_COLORS.slate300}`,
+      }}>
         <Box display="flex" alignItems="center" gap={1.5}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-            <Person />
-          </Avatar>
+          {/* Gradient icon box */}
+          <Box sx={{
+            width: 44,
+            height: 44,
+            borderRadius: BORDER_RADIUS.md,
+            background: BRAND_COLORS.primaryGradient,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: SHADOWS.buttonDefault,
+          }}>
+            <DirectionsBus sx={{ color: BRAND_COLORS.white, fontSize: 24 }} />
+          </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+            <Typography sx={{ ...SIDEBAR_STYLES.logo }}>
               MyCampusRide
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{
+              color: BRAND_COLORS.slate600,
+              fontWeight: TYPOGRAPHY.weights.medium,
+              letterSpacing: TYPOGRAPHY.letterSpacing.wide,
+              textTransform: 'uppercase',
+              fontSize: '0.65rem',
+            }}>
               Driver Portal
             </Typography>
           </Box>
         </Box>
       </Box>
 
-      <List sx={{ px: 2, pt: 2 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.id} disablePadding>
-            <ListItemButton
-              onClick={() => handleMenuItemClick(item.id)}
-              sx={{
-                mb: 0.5,
-                borderRadius: 2,
-                bgcolor: activeView === item.id ? 'primary.main' : 'transparent',
-                color: activeView === item.id ? 'white' : 'text.primary',
-                '&:hover': {
-                  bgcolor: activeView === item.id ? 'primary.dark' : 'action.hover',
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.label}
-                primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+      {/* Navigation Menu */}
+      <List sx={{ px: 2, pt: 2, flex: 1 }}>
+        {menuItems.map((item) => {
+          const isActive = activeView === item.id;
+          return (
+            <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => handleMenuItemClick(item.id)}
+                sx={{
+                  borderRadius: BORDER_RADIUS.md,
+                  py: 1.2,
+                  px: 2,
+                  ...(isActive ? {
+                    background: BRAND_COLORS.primaryGradient,
+                    color: BRAND_COLORS.white,
+                    boxShadow: SHADOWS.buttonDefault,
+                    '&:hover': {
+                      background: BRAND_COLORS.primaryGradientHover,
+                    },
+                  } : {
+                    color: BRAND_COLORS.slate700,
+                    '&:hover': {
+                      bgcolor: 'rgba(14, 165, 233, 0.08)',
+                      color: BRAND_COLORS.skyBlue,
+                    },
+                  }),
+                  transition: 'all 0.25s ease',
+                }}
+              >
+                <ListItemIcon sx={{
+                  minWidth: 40,
+                  color: 'inherit',
+                  transition: 'all 0.25s ease',
+                }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    fontWeight: isActive ? TYPOGRAPHY.weights.bold : TYPOGRAPHY.weights.semibold,
+                    fontSize: '0.95rem',
+                  }}
+                />
+                {/* Active slide indicator */}
+                {isActive && (
+                  <Box sx={{
+                    position: 'absolute',
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 4,
+                    height: 24,
+                    borderRadius: '0 4px 4px 0',
+                    background: BRAND_COLORS.white,
+                    opacity: 0.6,
+                  }} />
+                )}
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
 
+      {/* User Profile Section */}
       <Box sx={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         p: 2,
-        borderTop: '1px solid rgba(0,0,0,0.08)',
-        bgcolor: 'grey.50'
+        borderTop: `1px solid ${BRAND_COLORS.slate300}`,
+        bgcolor: BRAND_COLORS.slate100,
       }}>
         <Box display="flex" alignItems="center" gap={1.5}>
-          <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {user?.name?.charAt(0).toUpperCase() || 'D'}
-          </Avatar>
+          {/* Gradient avatar border */}
+          <Box sx={{
+            p: 0.35,
+            borderRadius: '50%',
+            background: BRAND_COLORS.primaryGradient,
+            display: 'flex',
+          }}>
+            <Avatar
+              src={user?.profilePicture ? `${API_URL}/${user.profilePicture}` : undefined}
+              sx={{
+                bgcolor: BRAND_COLORS.white,
+                color: BRAND_COLORS.skyBlue,
+                fontWeight: TYPOGRAPHY.weights.bold,
+                width: 40,
+                height: 40,
+                border: `2px solid ${BRAND_COLORS.white}`,
+              }}
+            >
+              {user?.name?.charAt(0).toUpperCase() || 'D'}
+            </Avatar>
+          </Box>
           <Box flex={1} minWidth={0}>
-            <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+            <Typography variant="body2" sx={{
+              fontWeight: TYPOGRAPHY.weights.bold,
+              color: BRAND_COLORS.slate900,
+            }} noWrap>
               {user?.name || 'Driver'}
             </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography variant="caption" sx={{
+              color: BRAND_COLORS.slate600,
+            }} noWrap>
               {user?.email || 'N/A'}
             </Typography>
           </Box>
@@ -116,18 +216,19 @@ const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobi
             size="small"
             onClick={handleLogout}
             sx={{
-              color: 'error.main',
+              color: BRAND_COLORS.errorRed,
+              transition: 'all 0.2s ease',
               '&:hover': {
-                bgcolor: 'error.light',
-                color: 'white'
-              }
+                bgcolor: 'rgba(239, 68, 68, 0.1)',
+                transform: 'scale(1.1)',
+              },
             }}
           >
             <Logout fontSize="small" />
           </IconButton>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 
   return (
@@ -137,15 +238,13 @@ const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobi
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
+          ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
-              bgcolor: 'white',
+              border: 'none',
             },
           }}
         >
@@ -160,8 +259,7 @@ const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobi
             '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
-              bgcolor: 'white',
-              borderRight: '1px solid rgba(0,0,0,0.08)',
+              border: 'none',
             },
           }}
         >

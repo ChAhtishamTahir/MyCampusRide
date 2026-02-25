@@ -18,7 +18,7 @@ import StudentTrackingView from './components/StudentTrackingView';
 import StudentProfileView from './components/StudentProfileView';
 import VirtualTransportCard from './components/VirtualTransportCard';
 import NotificationPanel from '../../components/NotificationPanel';
-import { BACKGROUND_GRADIENTS } from './styles/brandStyles';
+import { BACKGROUND_GRADIENTS } from '../../styles/brandStyles';
 
 const StudentDashboard = () => {
   // Authentication and navigation
@@ -30,6 +30,11 @@ const StudentDashboard = () => {
   const [assignedBus, setAssignedBus] = useState(null);
   const [assignedRoute, setAssignedRoute] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   /**
    * Toggle mobile drawer open/close state
@@ -130,10 +135,13 @@ const StudentDashboard = () => {
         <StudentHeader
           activeView={activeView}
           handleDrawerToggle={handleDrawerToggle}
+          onRefresh={handleRefresh}
         />
 
         {/* Dynamic view content */}
-        {renderActiveView()}
+        <React.Fragment key={refreshKey}>
+          {renderActiveView()}
+        </React.Fragment>
       </Box>
     </Box>
   );

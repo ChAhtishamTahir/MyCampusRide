@@ -22,7 +22,7 @@ import {
   BRAND_COLORS,
   BORDER_RADIUS,
   SHADOWS,
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
 const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
   /**
@@ -83,7 +83,7 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
       }}>
         <School sx={{ color: BRAND_COLORS.white, mr: 1.5, fontSize: 28 }} />
         <Typography variant="h6" sx={{ color: BRAND_COLORS.white, fontWeight: 700, letterSpacing: '-0.5px' }}>
-          CampusRide
+          MyCampusRide
         </Typography>
       </Box>
 
@@ -98,12 +98,15 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
             background: BRAND_COLORS.primaryGradient,
             display: 'flex',
           }}>
-            <Avatar sx={{
-              width: 56,
-              height: 56,
-              bgcolor: BRAND_COLORS.white,
-              color: BRAND_COLORS.skyBlue,
-            }}>
+            <Avatar
+              src={user?.profilePicture ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${user.profilePicture}` : undefined}
+              sx={{
+                width: 56,
+                height: 56,
+                bgcolor: BRAND_COLORS.white,
+                color: BRAND_COLORS.skyBlue,
+              }}
+            >
               <Person sx={{ fontSize: 28, fontWeight: 700 }} />
             </Avatar>
           </Box>
@@ -136,6 +139,16 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
           <Typography variant="body2" sx={{ color: BRAND_COLORS.slate600 }}>
             Model: {assignedBus ? assignedBus.model : 'N/A'} ({assignedBus ? assignedBus.year : 'N/A'})
           </Typography>
+          {user?.stopName && (
+            <Box mt={1}>
+              <Typography variant="caption" sx={{ color: BRAND_COLORS.slate600, display: 'block', mb: 0.2 }}>
+                Selected Stop:
+              </Typography>
+              <Typography variant="body2" sx={{ color: BRAND_COLORS.slate900, fontWeight: 600 }}>
+                {user.stopName}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         <Divider sx={{ my: 2, borderColor: BRAND_COLORS.slate300 }} />
@@ -169,8 +182,8 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
               size="small"
               sx={{
                 bgcolor: feeStatus === 'paid' ? BRAND_COLORS.successGreen :
-                         feeStatus === 'partially_paid' ? BRAND_COLORS.warningOrange :
-                         BRAND_COLORS.slate400,
+                  feeStatus === 'partially_paid' ? BRAND_COLORS.warningOrange :
+                    BRAND_COLORS.slate400,
                 color: BRAND_COLORS.white,
                 fontWeight: 600,
                 borderRadius: BORDER_RADIUS.sm,

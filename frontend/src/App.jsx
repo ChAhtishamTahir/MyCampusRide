@@ -20,11 +20,11 @@ import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 function App() {
   const { isLoading, isAuthenticated, user } = useAuth();
   const location = useLocation();
-  
+
   // Hide footer on dashboard pages
-  const isDashboard = location.pathname.includes('/admin') || 
-                     location.pathname.includes('/driver') || 
-                     location.pathname.includes('/student');
+  const isDashboard = location.pathname.includes('/admin') ||
+    location.pathname.includes('/driver') ||
+    location.pathname.includes('/student');
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -45,44 +45,44 @@ function App() {
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Show navbar only on authenticated pages (not on dashboards as they have their own nav) */}
       {isAuthenticated && !isDashboard && <Navbar />}
-      
+
       <Box component="main" sx={{ flexGrow: 1 }}>
         <Routes>
           {/* Public routes */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               isAuthenticated ? (
                 <Navigate to={`/${user.role}`} replace />
               ) : (
                 <LandingPage />
               )
-            } 
+            }
           />
-          <Route 
-            path="/login" 
+          <Route
+            path="/login"
             element={
               isAuthenticated ? (
                 <Navigate to={`/${user.role}`} replace />
               ) : (
                 <LoginPage />
               )
-            } 
+            }
           />
-          <Route 
-            path="/register" 
+          <Route
+            path="/register"
             element={
               isAuthenticated ? (
                 <Navigate to={`/${user.role}`} replace />
               ) : (
                 <RegisterPage />
               )
-            } 
+            }
           />
 
           {/* Protected routes */}
           <Route
-            path="/admin"
+            path="/admin/*"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />

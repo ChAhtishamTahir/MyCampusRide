@@ -20,17 +20,21 @@ const Bus = require('../models/Bus');
 const Route = require('../models/Route');
 const Notification = require('../models/Notification');
 const { asyncHandler } = require('../middleware/errorHandler');
+const path = require('path');
+const fs = require('fs');
 
 // @desc    Get all users (Admin only)
 // @route   GET /api/users
 // @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
-  const { role, status, page = 1, limit = 10 } = req.query;
-  
+  const { role, status, isDisplaced, assignedBus, page = 1, limit = 10 } = req.query;
+
   // Build filter object
   const filter = {};
   if (role) filter.role = role;
   if (status) filter.status = status;
+  if (isDisplaced) filter.isDisplaced = isDisplaced === 'true';
+  if (assignedBus) filter.assignedBus = assignedBus;
 
   // Calculate pagination
   const skip = (page - 1) * limit;
@@ -163,6 +167,8 @@ const updateUser = asyncHandler(async (req, res) => {
     }
   }
 
+  let shouldClearDisplaced = false;
+
   // Check if assignedBus changed
   if (assignedBus !== undefined) {
     // Convert to string for comparison
@@ -179,16 +185,42 @@ const updateUser = asyncHandler(async (req, res) => {
         // Bus was changed or newly assigned
         const busData = await Bus.findById(newBusId);
         if (busData) {
+          // Check if there is capacity
+          if (busData.capacity <= 0) {
+            return res.status(400).json({
+              success: false,
+              message: `Bus ${busData.busNumber} is full. Cannot assign user.`
+            });
+          }
+
           feeNoteEntries.push(
             `Assigned to bus "${busData.busNumber}" by ${adminName} on ${timestamp}`
           );
+
+          // Clear displaced flag when assigned to a valid bus
+          shouldClearDisplaced = true;
         }
+      }
+
+      // CAPACITY MANAGEMENT
+      // 1. If there was an old bus, increment its capacity
+      if (oldBusId) {
+        await Bus.findByIdAndUpdate(oldBusId, { $inc: { capacity: 1 } });
+      }
+
+      // 2. If there is a new bus, decrement its capacity
+      if (newBusId) {
+        await Bus.findByIdAndUpdate(newBusId, { $inc: { capacity: -1 } });
       }
     }
   }
 
   // Build the update object
   const updateData = { name, email, phone, status, feeStatus, assignedRoute, assignedBus };
+
+  if (shouldClearDisplaced) {
+    updateData.isDisplaced = false;
+  }
 
   // Handle activatedAt when status changes to 'active'
   // This is needed because findByIdAndUpdate bypasses the pre-save hook
@@ -225,8 +257,8 @@ const updateUser = asyncHandler(async (req, res) => {
       { path: 'routeId', select: 'routeName routeNo' }
     ]
   })
-   .populate('assignedRoute', 'routeName routeNo')
-   .populate('feeUpdatedBy', 'name email');
+    .populate('assignedRoute', 'routeName routeNo')
+    .populate('feeUpdatedBy', 'name email');
 
   res.json({
     success: true,
@@ -255,6 +287,11 @@ const deleteUser = asyncHandler(async (req, res) => {
     });
   }
 
+  // If user was assigned to a bus, free up the seat
+  if (user.assignedBus) {
+    await Bus.findByIdAndUpdate(user.assignedBus, { $inc: { capacity: 1 } });
+  }
+
   await User.findByIdAndDelete(req.params.id);
 
   res.json({
@@ -268,7 +305,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const approveDriver = asyncHandler(async (req, res) => {
   const driver = await User.findById(req.params.id);
-  
+
   if (!driver) {
     return res.status(404).json({
       success: false,
@@ -320,9 +357,9 @@ const approveDriver = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const rejectDriver = asyncHandler(async (req, res) => {
   const { reason } = req.body;
-  
+
   const driver = await User.findById(req.params.id);
-  
+
   if (!driver) {
     return res.status(404).json({
       success: false,
@@ -371,9 +408,9 @@ const rejectDriver = asyncHandler(async (req, res) => {
 // @route   GET /api/users/pending-drivers
 // @access  Private/Admin
 const getPendingDrivers = asyncHandler(async (req, res) => {
-  const pendingDrivers = await User.find({ 
-    role: 'driver', 
-    status: 'pending' 
+  const pendingDrivers = await User.find({
+    role: 'driver',
+    status: 'pending'
   }).sort({ createdAt: -1 });
 
   res.json({
@@ -421,6 +458,47 @@ const getUserStats = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get driver's license PDF
+// @route   GET /api/users/:id/license
+// @access  Private/Admin
+const getDriverLicense = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  if (user.role !== 'driver') {
+    return res.status(400).json({
+      success: false,
+      message: 'User is not a driver'
+    });
+  }
+
+  if (!user.drivingLicenseFile) {
+    return res.status(404).json({
+      success: false,
+      message: 'No driving license file found for this driver'
+    });
+  }
+
+  const filePath = path.join(__dirname, '..', user.drivingLicenseFile);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({
+      success: false,
+      message: 'Driving license file not found on server'
+    });
+  }
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="${user.drivingLicenseFile}"`);
+  res.sendFile(filePath);
+});
+
 module.exports = {
   getUsers,
   getUser,
@@ -429,9 +507,6 @@ module.exports = {
   approveDriver,
   rejectDriver,
   getPendingDrivers,
-  getUserStats
+  getUserStats,
+  getDriverLicense
 };
-
-
-
-

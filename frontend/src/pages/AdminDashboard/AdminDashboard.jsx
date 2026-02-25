@@ -2,19 +2,18 @@
  * AdminDashboard Component
  *
  * Main container for the Admin Portal with modern brand styling.
+ * Uses URL-based nested routing for each section.
  * Features:
  * - Sidebar navigation with gradient active states
  * - Top header with notifications
- * - Dynamic view rendering based on selection
+ * - URL-based routing for each view
  * - Responsive layout (drawer on mobile)
  * - Brand-consistent background gradient
- *
- * This is the entry point for the admin portal, coordinating all
- * sub-components and managing the overall layout.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box } from '@mui/material';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from './components/AdminSidebar';
@@ -24,15 +23,21 @@ import UsersView from './components/UsersView';
 import BusesView from './components/BusesView';
 import RoutesView from './components/RoutesView';
 import FeeManagementView from './components/FeeManagementView';
+import BusAssignmentView from './components/BusAssignmentView';
+import DisplacedStudentsView from './components/DisplacedStudentsView';
 import NotificationsView from './components/NotificationsView';
 import AdminProfileView from './components/AdminProfileView';
-import { BACKGROUND_GRADIENTS } from './styles/brandStyles';
+import { BACKGROUND_GRADIENTS } from '../../styles/brandStyles';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeView, setActiveView] = useState('overview');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   /**
    * Toggle mobile drawer open/close
@@ -43,52 +48,21 @@ const AdminDashboard = () => {
 
   /**
    * Authorization check - redirect if not admin
-   * This runs on every render to ensure security
    */
   if (!user || user.role !== 'admin') {
     navigate('/');
     return null;
   }
 
-  /**
-   * Render the active view based on sidebar selection
-   * Each view is a separate component for better code organization
-   *
-   * @returns {JSX.Element} The currently selected view component
-   */
-  const renderActiveView = () => {
-    switch (activeView) {
-      case 'overview':
-        return <OverviewView />;
-      case 'users':
-        return <UsersView />;
-      case 'buses':
-        return <BusesView />;
-      case 'routes':
-        return <RoutesView />;
-      case 'fee-management':
-        return <FeeManagementView />;
-      case 'notifications':
-        return <NotificationsView />;
-      case 'profile':
-        return <AdminProfileView />;
-      default:
-        return <OverviewView />;
-    }
-  };
-
   return (
     // Main layout container with brand background gradient
     <Box sx={{
       display: 'flex',
-      // Subtle gradient background matching landing page aesthetic
       background: BACKGROUND_GRADIENTS.page,
       minHeight: '100vh',
     }}>
       {/* Left Sidebar - Navigation menu with brand styling */}
       <AdminSidebar
-        activeView={activeView}
-        setActiveView={setActiveView}
         user={user}
         logout={logout}
         navigate={navigate}
@@ -100,17 +74,26 @@ const AdminDashboard = () => {
       <Box component="main" sx={{
         flexGrow: 1,
         overflow: 'auto',
-        // Smooth transitions when views change
         transition: 'all 0.3s ease',
       }}>
-        {/* Top Header - Notifications and refresh */}
-        <AdminHeader
-          activeView={activeView}
-          handleDrawerToggle={handleDrawerToggle}
-        />
+        {/* Top Header */}
+        <AdminHeader handleDrawerToggle={handleDrawerToggle} onRefresh={handleRefresh} />
 
-        {/* Dynamic View Content */}
-        {renderActiveView()}
+        {/* URL-based nested routes */}
+        <React.Fragment key={refreshKey}>
+          <Routes>
+            <Route index element={<OverviewView />} />
+            <Route path="users" element={<UsersView />} />
+            <Route path="buses" element={<BusesView />} />
+            <Route path="routes" element={<RoutesView />} />
+            <Route path="fees" element={<FeeManagementView />} />
+            <Route path="bus-assignment" element={<BusAssignmentView />} />
+            <Route path="displaced" element={<DisplacedStudentsView />} />
+            <Route path="notifications" element={<NotificationsView />} />
+            <Route path="profile" element={<AdminProfileView />} />
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </React.Fragment>
       </Box>
     </Box>
   );

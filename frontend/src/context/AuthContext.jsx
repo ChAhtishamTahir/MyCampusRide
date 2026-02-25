@@ -145,6 +145,8 @@ export const AuthProvider = ({ children }) => {
         payload: { user },
       });
 
+      toast.success(`Welcome back, ${user.name || 'User'}!`);
+
       return { success: true, user };
     } catch (error) {
       let errorMessage;
@@ -177,7 +179,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START });
-      const response = await authService.register(userData);
+
+      // If userData is FormData (driver registration with file upload), 
+      // we need to use multipart/form-data content type
+      const isFormData = userData instanceof FormData;
+      const response = await authService.register(userData, isFormData);
       const { user } = response.data.data;
 
       localStorage.setItem('user', JSON.stringify(user));

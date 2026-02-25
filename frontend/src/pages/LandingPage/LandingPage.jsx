@@ -7,6 +7,7 @@ import {
   NotificationsActive, Map, Schedule, CheckCircle, Speed, Groups
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import Footer from '../../components/Footer';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ const LandingPage = () => {
                 letterSpacing: '-0.5px',
               }}
             >
-              CampusRide
+              MyCampusRide
             </Typography>
             <Box display="flex" gap={2}>
               <Button
@@ -618,194 +619,8 @@ const LandingPage = () => {
         </Container>
       </Box>
 
-      {/* CTA Section */}
-      <Box
-        sx={{
-          py: { xs: 8, md: 12 },
-          background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -50,
-            right: -50,
-            width: 300,
-            height: 300,
-            borderRadius: '50%',
-            bgcolor: 'rgba(255, 255, 255, 0.1)',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -100,
-            left: -100,
-            width: 400,
-            height: 400,
-            borderRadius: '50%',
-            bgcolor: 'rgba(255, 255, 255, 0.08)',
-          }}
-        />
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-          <Box textAlign="center">
-            <Typography
-              variant="h2"
-              sx={{
-                fontSize: { xs: '2rem', md: '3rem' },
-                fontWeight: 800,
-                mb: 2,
-                color: 'white',
-              }}
-            >
-              Ready to Get Started?
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 4,
-                color: 'rgba(255, 255, 255, 0.9)',
-                maxWidth: 600,
-                mx: 'auto',
-              }}
-            >
-              Join hundreds of students and staff experiencing seamless campus transportation
-            </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              onClick={() => navigate('/register')}
-              sx={{
-                bgcolor: 'white',
-                color: '#0EA5E9',
-                px: 5,
-                py: 2,
-                fontSize: '1.1rem',
-                fontWeight: 700,
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                '&:hover': {
-                  bgcolor: '#F8FAFC',
-                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.2)',
-                  transform: 'translateY(-2px)',
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              Create Your Account
-            </Button>
-          </Box>
-        </Container>
-      </Box>
-
       {/* Footer */}
-      <Box sx={{ py: 6, bgcolor: '#0F172A', color: 'white' }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
-                CampusRide
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.8 }}>
-                Modern campus transportation management system designed for students, drivers, and administrators.
-              </Typography>
-            </Grid>
-            <Grid item xs={12} sm={4} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Product
-              </Typography>
-              <Stack spacing={1}>
-                {['Features', 'Pricing', 'Security', 'Updates'].map((item) => (
-                  <Typography
-                    key={item}
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      cursor: 'pointer',
-                      '&:hover': { color: 'white' },
-                    }}
-                  >
-                    {item}
-                  </Typography>
-                ))}
-              </Stack>
-            </Grid>
-            <Grid item xs={12} sm={4} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Company
-              </Typography>
-              <Stack spacing={1}>
-                {['About', 'Blog', 'Careers', 'Contact'].map((item) => (
-                  <Typography
-                    key={item}
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      cursor: 'pointer',
-                      '&:hover': { color: 'white' },
-                    }}
-                  >
-                    {item}
-                  </Typography>
-                ))}
-              </Stack>
-            </Grid>
-            <Grid item xs={12} sm={4} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Support
-              </Typography>
-              <Stack spacing={1}>
-                {['Help Center', 'Documentation', 'Community', 'Status'].map((item) => (
-                  <Typography
-                    key={item}
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      cursor: 'pointer',
-                      '&:hover': { color: 'white' },
-                    }}
-                  >
-                    {item}
-                  </Typography>
-                ))}
-              </Stack>
-            </Grid>
-            <Grid item xs={12} sm={4} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Legal
-              </Typography>
-              <Stack spacing={1}>
-                {['Privacy', 'Terms', 'License', 'Cookies'].map((item) => (
-                  <Typography
-                    key={item}
-                    variant="body2"
-                    sx={{
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      cursor: 'pointer',
-                      '&:hover': { color: 'white' },
-                    }}
-                  >
-                    {item}
-                  </Typography>
-                ))}
-              </Stack>
-            </Grid>
-          </Grid>
-          <Box
-            sx={{
-              mt: 6,
-              pt: 4,
-              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              textAlign: 'center',
-            }}
-          >
-            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-              © 2026 CampusRide. All rights reserved. Built with passion for better campus transportation.
-            </Typography>
-          </Box>
-        </Container>
-      </Box>
+      <Footer />
 
       {/* CSS Animations */}
       <style>

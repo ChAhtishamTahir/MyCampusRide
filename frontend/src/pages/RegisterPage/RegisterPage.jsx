@@ -11,6 +11,8 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   ArrowBack,
+  CloudUpload as CloudUploadIcon,
+  PictureAsPdf as PdfIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -33,6 +35,9 @@ const RegisterPage = () => {
   const [touched, setTouched] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [drivingLicense, setDrivingLicense] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -98,11 +103,17 @@ const RegisterPage = () => {
     if (formData.role === 'driver' && touched.licenseNumber && !formData.licenseNumber) {
       errors.licenseNumber = 'License number is required';
     }
+    if (touched.drivingLicense && !drivingLicense) {
+      errors.drivingLicense = 'Driving license PDF is required';
+    }
+    if (touched.profilePicture && !profilePicture) {
+      errors.profilePicture = 'Profile picture is required';
+    }
     if (formData.role === 'admin' && touched.adminSecretCode && !formData.adminSecretCode) {
       errors.adminSecretCode = 'Admin secret code is required';
     }
     return errors;
-  }, [formData, touched]);
+  }, [formData, touched, drivingLicense, profilePicture]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -131,6 +142,8 @@ const RegisterPage = () => {
       phone: true,
       studentId: formData.role === 'student',
       licenseNumber: formData.role === 'driver',
+      drivingLicense: formData.role === 'driver',
+      profilePicture: true,
       adminSecretCode: formData.role === 'admin'
     });
 
@@ -163,43 +176,52 @@ const RegisterPage = () => {
       }
     }
 
-    try {
-      const registrationData = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-        role: formData.role
-      };
+    if (!profilePicture) {
+      setError('Profile picture is required');
+      toast.error('Profile picture is required');
+      setLoading(false);
+      return;
+    }
 
-      if (formData.role === 'driver') {
+    try {
+      const registrationData = new FormData();
+      registrationData.append('name', formData.name);
+      registrationData.append('email', formData.email);
+      registrationData.append('password', formData.password);
+      registrationData.append('phone', formData.phone);
+      registrationData.append('role', formData.role);
+      registrationData.append('profilePicture', profilePicture);
+
+      if (formData.role === 'student') {
+        registrationData.append('studentId', formData.studentId);
+      } else if (formData.role === 'driver') {
         if (!formData.licenseNumber) {
-          setError('License number is required for drivers');
-          toast.error('License number is required');
+          setError('License number is required');
           setLoading(false);
           return;
         }
-        registrationData.licenseNumber = formData.licenseNumber;
-      } else if (formData.role === 'student') {
-        registrationData.studentId = formData.studentId;
+        if (!drivingLicense) {
+          setError('Driving license PDF is required');
+          setLoading(false);
+          return;
+        }
+        registrationData.append('licenseNumber', formData.licenseNumber);
+        registrationData.append('drivingLicense', drivingLicense);
       } else if (formData.role === 'admin') {
         if (!formData.adminSecretCode) {
           setError('Admin secret code is required');
-          toast.error('Admin secret code is required');
           setLoading(false);
           return;
         }
-        registrationData.adminSecretCode = formData.adminSecretCode;
+        registrationData.append('adminSecretCode', formData.adminSecretCode);
       }
 
       const result = await register(registrationData);
 
       if (result.success) {
         if (result.user.role === 'driver' && result.user.status === 'pending') {
-          toast.success('Registration successful! Your account is pending approval.', { autoClose: 5000 });
           navigate('/login', { replace: true });
         } else {
-          toast.success('Registration successful! Welcome to MyCampusRide.');
           if (result.user.role === 'admin') {
             navigate('/admin', { replace: true });
           } else if (result.user.role === 'student') {
@@ -292,7 +314,7 @@ const RegisterPage = () => {
               letterSpacing: '-0.5px',
             }}
           >
-            CampusRide
+            MyCampusRide
           </Typography>
         </Box>
 
@@ -307,7 +329,7 @@ const RegisterPage = () => {
           }}
         >
           <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
-            {/* Icon with gradient background - matching landing page style */}
+            {/* Profile Picture Upload - Replaces Generic Icon */}
             <Box
               sx={{
                 display: 'flex',
@@ -316,21 +338,67 @@ const RegisterPage = () => {
                 mb: 4,
               }}
             >
-              <Box
-                sx={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: '18px',
-                  background: 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 2,
-                  boxShadow: '0 8px 24px rgba(14, 165, 233, 0.3)',
+              <input
+                accept="image/*"
+                style={{ display: 'none' }}
+                id="profile-pic-upload"
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error('Image size must be less than 5MB');
+                      return;
+                    }
+                    setProfilePicture(file);
+                    setProfilePreview(URL.createObjectURL(file));
+                    setTouched(prev => ({ ...prev, profilePicture: true }));
+                  }
                 }}
-              >
-                <PersonAddIcon sx={{ fontSize: 36, color: 'white' }} />
-              </Box>
+              />
+              <label htmlFor="profile-pic-upload">
+                <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
+                    background: profilePreview
+                      ? `url(${profilePreview}) center/cover no-repeat`
+                      : 'linear-gradient(135deg, #0EA5E9 0%, #14B8A6 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 2,
+                    boxShadow: '0 8px 24px rgba(14, 165, 233, 0.3)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&:hover .upload-overlay': {
+                      opacity: 1
+                    }
+                  }}
+                >
+                  {!profilePreview && <PersonAddIcon sx={{ fontSize: 48, color: 'white' }} />}
+                  <Box
+                    className="upload-overlay"
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      bgcolor: 'rgba(0,0,0,0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0,
+                      transition: 'opacity 0.2s'
+                    }}
+                  >
+                    <CloudUploadIcon sx={{ color: 'white' }} />
+                  </Box>
+                </Box>
+              </label>
               <Typography
                 component="h1"
                 variant="h5"
@@ -347,10 +415,17 @@ const RegisterPage = () => {
                 sx={{
                   color: '#64748B',
                   textAlign: 'center',
+                  mb: 1
                 }}
               >
-                Join CampusRide for seamless campus transportation
+                {/* Join MyCampusRide for seamless campus transportation */}
+                Upload a profile picture to get started
               </Typography>
+              {touched.profilePicture && !profilePicture && (
+                <Typography variant="caption" sx={{ color: '#ef4444' }}>
+                  Profile picture is required
+                </Typography>
+              )}
             </Box>
 
             {/* Error alert with brand styling */}
@@ -691,6 +766,88 @@ const RegisterPage = () => {
                     },
                   }}
                 />
+              )}
+
+              {/* Driving License PDF Upload for Drivers */}
+              {formData.role === 'driver' && (
+                <Box sx={{ mt: 2, mb: 1 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: '#0F172A' }}>
+                    Driving License (PDF) *
+                  </Typography>
+                  <Box
+                    sx={{
+                      border: drivingLicense
+                        ? '2px solid #10B981'
+                        : touched.drivingLicense && !drivingLicense
+                          ? '2px dashed #ef4444'
+                          : '2px dashed #CBD5E1',
+                      borderRadius: '12px',
+                      p: 3,
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      background: drivingLicense
+                        ? 'rgba(16, 185, 129, 0.05)'
+                        : 'rgba(14, 165, 233, 0.02)',
+                      '&:hover': {
+                        borderColor: '#0EA5E9',
+                        background: 'rgba(14, 165, 233, 0.05)',
+                      },
+                    }}
+                    onClick={() => document.getElementById('drivingLicenseInput').click()}
+                  >
+                    <input
+                      type="file"
+                      id="drivingLicenseInput"
+                      accept="application/pdf"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          if (file.type !== 'application/pdf') {
+                            toast.error('Only PDF files are allowed');
+                            return;
+                          }
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error('File size must be less than 5MB');
+                            return;
+                          }
+                          setDrivingLicense(file);
+                          setTouched(prev => ({ ...prev, drivingLicense: true }));
+                        }
+                      }}
+                    />
+                    {drivingLicense ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                        <PdfIcon sx={{ color: '#ef4444', fontSize: 32 }} />
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
+                            {drivingLicense.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#64748B' }}>
+                            {(drivingLicense.size / 1024).toFixed(1)} KB — Click to change
+                          </Typography>
+                        </Box>
+                        <CheckCircleIcon sx={{ color: '#10B981', fontSize: 20 }} />
+                      </Box>
+                    ) : (
+                      <Box>
+                        <CloudUploadIcon sx={{ fontSize: 40, color: '#94A3B8', mb: 1 }} />
+                        <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 500 }}>
+                          Click to upload your driving license
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                          PDF only, max 5MB
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                  {touched.drivingLicense && !drivingLicense && (
+                    <Typography variant="caption" sx={{ color: '#ef4444', mt: 0.5, display: 'block', ml: 1.5 }}>
+                      Driving license PDF is required
+                    </Typography>
+                  )}
+                </Box>
               )}
 
               {formData.role === 'admin' && (

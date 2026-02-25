@@ -28,7 +28,7 @@ import {
   BORDER_RADIUS,
   BUTTON_STYLES,
   INPUT_STYLES,
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
 const StudentProfileView = () => {
   const [user, setUser] = useState(null);
@@ -197,14 +197,17 @@ const StudentProfileView = () => {
                     display: 'inline-flex',
                     mb: 2,
                   }}>
-                    <Avatar sx={{
-                      width: 120,
-                      height: 120,
-                      bgcolor: BRAND_COLORS.white,
-                      color: BRAND_COLORS.skyBlue,
-                      fontSize: '2.5rem',
-                      fontWeight: 700,
-                    }}>
+                    <Avatar
+                      src={user?.profilePicture ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${user.profilePicture}` : undefined}
+                      sx={{
+                        width: 120,
+                        height: 120,
+                        bgcolor: BRAND_COLORS.white,
+                        color: BRAND_COLORS.skyBlue,
+                        fontSize: '2.5rem',
+                        fontWeight: 700,
+                      }}
+                    >
                       {user?.name?.charAt(0).toUpperCase() || 'S'}
                     </Avatar>
                   </Box>
@@ -238,8 +241,8 @@ const StudentProfileView = () => {
                     <CreditCard sx={{ color: BRAND_COLORS.teal }} />
                     <Typography variant="body1" sx={{ fontWeight: 700, color: BRAND_COLORS.slate900 }}>
                       {user?.feeStatus === 'paid' ? 'Paid' :
-                       user?.feeStatus === 'partially_paid' ? 'Partially Paid' :
-                       'Pending'}
+                        user?.feeStatus === 'partially_paid' ? 'Partially Paid' :
+                          'Pending'}
                     </Typography>
                   </Box>
                 </Box>

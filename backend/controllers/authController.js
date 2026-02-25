@@ -13,7 +13,9 @@
  */
 
 const jwt = require('jsonwebtoken');
+const Route = require('../models/Route');
 const User = require('../models/User');
+const Bus = require('../models/Bus');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 // Generate JWT Token
@@ -41,6 +43,25 @@ const generateToken = (userId) => {
 // @access  Public
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, phone, studentId, licenseNumber, adminSecretCode } = req.body;
+
+  // FILE VALIDATION
+  const files = req.files || {};
+
+  // 1. Profile Picture is mandatory for EVERYONE
+  if (!files.profilePicture || files.profilePicture.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Profile picture is required'
+    });
+  }
+
+  // 2. Driving License is mandatory for DRIVERS
+  if (role === 'driver' && (!files.drivingLicense || files.drivingLicense.length === 0)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Driving license PDF is required for driver registration'
+    });
+  }
 
   // ADMIN SECRET CODE VALIDATION
   // If registering as admin, validate the secret code
@@ -98,16 +119,27 @@ const register = asyncHandler(async (req, res) => {
     }
   }
 
-  // Create user
-  const user = await User.create({
+  // Prepare user data
+  const userData = {
     name,
     email,
     password,
     role,
     phone,
-    ...(role === 'student' && { studentId }),
-    ...(role === 'driver' && { licenseNumber })
-  });
+    profilePicture: 'uploads/profiles/' + files.profilePicture[0].filename
+  };
+
+  // Add role-specific fields
+  if (role === 'student') {
+    userData.studentId = studentId;
+    userData.feeStatus = 'pending';
+  } else if (role === 'driver') {
+    userData.licenseNumber = licenseNumber;
+    userData.drivingLicenseFile = 'uploads/licenses/' + files.drivingLicense[0].filename;
+  }
+
+  // Create user
+  const user = await User.create(userData);
 
   // Generate token
   const token = generateToken(user._id);
@@ -115,9 +147,9 @@ const register = asyncHandler(async (req, res) => {
   // Set token in cookie
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Set to false in development
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax' // More permissive for development
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   });
 
   res.status(201).json({
@@ -323,6 +355,74 @@ const changePassword = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Select route for student
+// @route   PUT /api/auth/select-route
+// @access  Private (Student only)
+const selectRoute = asyncHandler(async (req, res) => {
+  const { routeId, stopName } = req.body;
+  const userId = req.user._id;
+
+  // Ensure user is a student
+  if (req.user.role !== 'student') {
+    return res.status(403).json({
+      success: false,
+      message: 'Only students can select a route'
+    });
+  }
+
+  if (!routeId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Route ID is required'
+    });
+  }
+
+  // Validate that the route exists and is active
+  const route = await Route.findById(routeId);
+  if (!route) {
+    return res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
+  }
+
+  if (!route.isActive) {
+    return res.status(400).json({
+      success: false,
+      message: 'This route is not currently active'
+    });
+  }
+
+  // Validate stop if provided
+  if (stopName && route.stops && route.stops.length > 0) {
+    const validStop = route.stops.find(s => s.name === stopName);
+    if (!validStop) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selected stop is not valid for this route'
+      });
+    }
+  }
+
+  // If user was previously assigned to a bus, free up the seat
+  if (req.user.assignedBus) {
+    await Bus.findByIdAndUpdate(req.user.assignedBus, { $inc: { capacity: 1 } });
+  }
+
+  // Update the student's assignedRoute, stopName, and clear bus
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { assignedRoute: routeId, assignedBus: null, stopName: stopName || null },
+    { new: true, runValidators: true }
+  ).populate('assignedRoute', 'routeName routeNo description departureTime distance estimatedDuration stops');
+
+  res.json({
+    success: true,
+    message: `Route "${route.routeName}" selected successfully${stopName ? ` with stop "${stopName}"` : ''}`,
+    data: updatedUser
+  });
+});
+
 // @desc    Logout user
 // @route   POST /api/auth/logout
 // @access  Public
@@ -331,7 +431,7 @@ const logout = asyncHandler(async (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax' // More permissive for development
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   });
 
   res.json({
@@ -346,6 +446,7 @@ module.exports = {
   getMe,
   updateProfile,
   changePassword,
+  selectRoute,
   logout
 };
 

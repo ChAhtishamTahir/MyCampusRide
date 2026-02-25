@@ -88,7 +88,6 @@ const LoginPage = () => {
       const result = await login(formData);
 
       if (result.success) {
-        toast.success(`Welcome back, ${result.user.name || 'User'}!`);
         if (result.user.role === 'admin') {
           navigate('/admin', { replace: true });
         } else if (result.user.role === 'driver') {
@@ -179,7 +178,7 @@ const LoginPage = () => {
               letterSpacing: '-0.5px',
             }}
           >
-            CampusRide
+            MyCampusRide
           </Typography>
         </Box>
 

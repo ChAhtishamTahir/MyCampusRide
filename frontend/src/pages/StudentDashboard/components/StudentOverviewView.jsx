@@ -14,10 +14,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, Box, Avatar, Chip,
-  CircularProgress, Alert, Tab, Tabs
+  CircularProgress, Alert, Tab, Tabs, FormControl, InputLabel, Select, MenuItem, Button
 } from '@mui/material';
 import {
-  DirectionsBus, Route, AccessTime, Receipt, Timeline
+  DirectionsBus, Route, AccessTime, Receipt, Timeline, CheckCircle
 } from '@mui/icons-material';
 import { authService, busService, routeService } from '../../../services';
 import VirtualTransportCard from './VirtualTransportCard';
@@ -27,7 +27,7 @@ import {
   BORDER_RADIUS,
   SHADOWS,
   TYPOGRAPHY,
-} from '../styles/brandStyles';
+} from '../../../styles/brandStyles';
 
 const StudentOverviewView = () => {
   const [user, setUser] = useState(null);
@@ -36,6 +36,10 @@ const StudentOverviewView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [availableRoutes, setAvailableRoutes] = useState([]);
+  const [selectedRouteId, setSelectedRouteId] = useState('');
+  const [selectedStopName, setSelectedStopName] = useState('');
+  const [selectingRoute, setSelectingRoute] = useState(false);
 
   // Load student data on component mount
   useEffect(() => {
@@ -60,7 +64,7 @@ const StudentOverviewView = () => {
       if (currentUser?.assignedBus) {
         if (typeof currentUser.assignedBus === 'object' && currentUser.assignedBus._id) {
           setAssignedBus(currentUser.assignedBus);
-          
+
           // Set route from populated bus data
           if (currentUser.assignedBus.routeId) {
             if (typeof currentUser.assignedBus.routeId === 'object') {
@@ -74,6 +78,30 @@ const StudentOverviewView = () => {
               }
             }
           }
+        }
+      }
+
+      // If student has a selected route but no bus yet, load the route info
+      if (currentUser?.assignedRoute && !currentUser?.assignedBus) {
+        if (typeof currentUser.assignedRoute === 'object') {
+          setAssignedRoute(currentUser.assignedRoute);
+        } else {
+          try {
+            const routeResponse = await routeService.getRoute(currentUser.assignedRoute);
+            setAssignedRoute(routeResponse.data.data || routeResponse.data);
+          } catch (routeErr) {
+            console.error('Failed to load route info:', routeErr);
+          }
+        }
+      }
+
+      // Load available routes if no route is assigned yet
+      if (!currentUser?.assignedRoute) {
+        try {
+          const routesResponse = await routeService.getActiveRoutes();
+          setAvailableRoutes(routesResponse.data.data || routesResponse.data || []);
+        } catch (routeErr) {
+          console.error('Failed to load active routes:', routeErr);
         }
       }
     } catch (err) {
@@ -212,8 +240,8 @@ const StudentOverviewView = () => {
                     size="small"
                     sx={{
                       bgcolor: feeStatus === 'paid' ? BRAND_COLORS.successGreen :
-                               feeStatus === 'partially_paid' ? BRAND_COLORS.warningOrange :
-                               BRAND_COLORS.slate400,
+                        feeStatus === 'partially_paid' ? BRAND_COLORS.warningOrange :
+                          BRAND_COLORS.slate400,
                       color: BRAND_COLORS.white,
                       fontWeight: 600,
                     }}
@@ -290,6 +318,11 @@ const StudentOverviewView = () => {
                         {assignedRoute.departureTime && (
                           <Box display="flex" alignItems="center" gap={1} mt={1}>
                             <AccessTime fontSize="small" sx={{ color: BRAND_COLORS.slate600 }} />
+                            {user?.stopName && (
+                              <Typography variant="body2" sx={{ color: BRAND_COLORS.slate700 }}>
+                                Stop: {user.stopName}
+                              </Typography>
+                            )}
                             <Typography variant="body2" sx={{ color: BRAND_COLORS.slate700 }}>
                               Departure: {assignedRoute.departureTime}
                             </Typography>
@@ -298,17 +331,117 @@ const StudentOverviewView = () => {
                       </>
                     )}
                   </>
+                ) : !user?.assignedRoute ? (
+                  /* No route selected — show route selection card */
+                  <Box>
+                    <Alert
+                      severity="info"
+                      sx={{
+                        borderRadius: BORDER_RADIUS.md,
+                        bgcolor: 'rgba(14, 165, 233, 0.08)',
+                        border: `1px solid ${BRAND_COLORS.skyBlue}`,
+                        color: BRAND_COLORS.slate700,
+                        mb: 2,
+                      }}
+                    >
+                      Please select your route first. Once selected, admin will assign you a bus.
+                    </Alert>
+
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Select Your Route</InputLabel>
+                      <Select
+                        value={selectedRouteId}
+                        label="Select Your Route"
+                        onChange={(e) => {
+                          setSelectedRouteId(e.target.value);
+                          setSelectedStopName(''); // Reset stop when route changes
+                        }}
+                        sx={{ borderRadius: BORDER_RADIUS.md }}
+                      >
+                        {availableRoutes.map(route => (
+                          <MenuItem key={route._id} value={route._id}>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {route.routeName} ({route.routeNo})
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#64748B' }}>
+                                Departure: {route.departureTime} • {route.distance} km • {route.estimatedDuration} min
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    {selectedRouteId && (
+                      <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                        <InputLabel>Select Your Stop</InputLabel>
+                        <Select
+                          value={selectedStopName}
+                          label="Select Your Stop"
+                          onChange={(e) => setSelectedStopName(e.target.value)}
+                          sx={{ borderRadius: BORDER_RADIUS.md }}
+                        >
+                          {availableRoutes
+                            .find(r => r._id === selectedRouteId)?.stops
+                            ?.sort((a, b) => a.sequence - b.sequence)
+                            .map(stop => (
+                              <MenuItem key={stop._id || stop.name} value={stop.name}>
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {stop.name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B' }}>
+                                    Fee: {stop.fee} PKR • Pickup: {stop.pickupTime}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                        </Select>
+                      </FormControl>
+                    )}
+
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      disabled={!selectedRouteId || selectingRoute || (availableRoutes.find(r => r._id === selectedRouteId)?.stops?.length > 0 && !selectedStopName)}
+                      onClick={async () => {
+                        setSelectingRoute(true);
+                        try {
+                          await authService.selectRoute(selectedRouteId, selectedStopName);
+                          await loadStudentData();
+                        } catch (err) {
+                          console.error('Failed to select route:', err);
+                        } finally {
+                          setSelectingRoute(false);
+                        }
+                      }}
+                      sx={{
+                        mt: 2,
+                        background: BRAND_COLORS.primaryGradient,
+                        borderRadius: BORDER_RADIUS.md,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        py: 1,
+                      }}
+                    >
+                      {selectingRoute ? <CircularProgress size={20} color="inherit" /> : 'Confirm Route Selection'}
+                    </Button>
+                  </Box>
                 ) : (
+                  /* Route selected but no bus yet */
                   <Alert
-                    severity="info"
+                    severity="success"
+                    icon={<CheckCircle />}
                     sx={{
                       borderRadius: BORDER_RADIUS.md,
-                      bgcolor: 'rgba(14, 165, 233, 0.08)',
-                      border: `1px solid ${BRAND_COLORS.skyBlue}`,
+                      bgcolor: 'rgba(16, 185, 129, 0.08)',
+                      border: `1px solid ${BRAND_COLORS.successGreen}`,
                       color: BRAND_COLORS.slate700,
                     }}
                   >
-                    No bus assigned yet. Contact admin to assign a bus based on your fee status.
+                    Route selected: <strong>{assignedRoute?.routeName || 'Selected'}</strong>.
+                    Waiting for admin to assign a bus.
                   </Alert>
                 )}
               </CardContent>

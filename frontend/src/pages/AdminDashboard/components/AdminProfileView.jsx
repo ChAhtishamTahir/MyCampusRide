@@ -60,7 +60,7 @@ const AdminProfileView = () => {
       }
 
       // Validate email
-      const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+      const emailRegex = /^\w+([-.]?\w+)*@\w+([-.]?\w+)*(\.\w{2,3})+$/;
       if (!emailRegex.test(formData.email)) {
         toast.error('Please enter a valid email address');
         setSaving(false);
@@ -95,8 +95,8 @@ const AdminProfileView = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+      <Container maxWidth="xl" sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, py: 8 }}>
           <CircularProgress size={24} />
           <Typography>Loading your profile...</Typography>
         </Box>
@@ -105,9 +105,9 @@ const AdminProfileView = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ p: 3 }}>
       <Card>
-        <CardContent>
+        <CardContent sx={{ p: 3 }}>
           <Box display="flex" alignItems="center" gap={2} mb={3}>
             <PersonIcon sx={{ fontSize: 40, color: 'primary.main' }} />
             <Box>
@@ -126,7 +126,10 @@ const AdminProfileView = () => {
           {activeTab === 0 && (
             <>
               <Box textAlign="center" mb={4}>
-                <Avatar sx={{ width: 120, height: 120, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '2rem' }}>
+                <Avatar
+                  src={user?.profilePicture ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${user.profilePicture}` : undefined}
+                  sx={{ width: 120, height: 120, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '2rem' }}
+                >
                   {user?.name?.charAt(0).toUpperCase() || 'A'}
                 </Avatar>
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
