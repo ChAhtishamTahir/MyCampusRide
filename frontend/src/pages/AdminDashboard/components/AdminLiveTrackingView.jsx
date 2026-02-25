@@ -148,6 +148,12 @@ const AdminLiveTrackingView = () => {
     return ROUTE_COLORS[index % ROUTE_COLORS.length];
   };
 
+  const isValidCoord = (lat, lng) => {
+    return typeof lat === 'number' && typeof lng === 'number' &&
+           isFinite(lat) && isFinite(lng) &&
+           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  };
+
   const filteredBuses = selectedRoute === 'all'
     ? activeBuses
     : activeBuses.filter((b) => b.route?._id === selectedRoute);
@@ -178,7 +184,7 @@ const AdminLiveTrackingView = () => {
     }
 
     const validBuses = filteredBuses.filter(
-      (b) => b.location?.latitude && b.location?.longitude
+      (b) => b.location && isValidCoord(b.location.latitude, b.location.longitude)
     );
 
     const center = validBuses.length > 0
@@ -215,7 +221,7 @@ const AdminLiveTrackingView = () => {
           );
         })}
 
-        {selectedBus && selectedBus.location && (
+        {selectedBus && selectedBus.location && isValidCoord(selectedBus.location.latitude, selectedBus.location.longitude) && (
           <InfoWindow
             position={{
               lat: selectedBus.location.latitude,
@@ -256,10 +262,13 @@ const AdminLiveTrackingView = () => {
 
         {selectedRoute !== 'all' && routes.length > 0 && (() => {
           const route = routes.find((r) => r._id === selectedRoute);
-          if (route?.stops?.length > 0) {
+          const validStops = (route?.stops || []).filter(
+            stop => isValidCoord(stop.latitude, stop.longitude)
+          );
+          if (validStops.length > 0) {
             return (
               <>
-                {route.stops.map((stop, index) => (
+                {validStops.map((stop, index) => (
                   <Marker
                     key={index}
                     position={{ lat: stop.latitude, lng: stop.longitude }}
@@ -275,7 +284,7 @@ const AdminLiveTrackingView = () => {
                   />
                 ))}
                 <Polyline
-                  path={route.stops.map((s) => ({ lat: s.latitude, lng: s.longitude }))}
+                  path={validStops.map((s) => ({ lat: s.latitude, lng: s.longitude }))}
                   options={{
                     strokeColor: getRouteColor(selectedRoute),
                     strokeOpacity: 0.7,

@@ -214,6 +214,12 @@ const DriverLiveTrackingView = () => {
     }
   };
 
+  const isValidCoord = (lat, lng) => {
+    return typeof lat === 'number' && typeof lng === 'number' &&
+           isFinite(lat) && isFinite(lng) &&
+           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  };
+
   const renderMap = () => {
     if (!hasApiKey) {
       return (
@@ -235,7 +241,7 @@ const DriverLiveTrackingView = () => {
           <Typography variant="body2" color="grey.500">
             Google Maps API key not configured
           </Typography>
-          {currentPosition && (
+          {currentPosition && isValidCoord(currentPosition.lat, currentPosition.lng) && (
             <Typography variant="body2" color="primary" sx={{ mt: 2 }}>
               Current: {currentPosition.lat.toFixed(5)}, {currentPosition.lng.toFixed(5)}
             </Typography>
@@ -244,8 +250,11 @@ const DriverLiveTrackingView = () => {
       );
     }
 
-    const center = currentPosition || CAMPUS_CENTER;
-    const routeStops = tripStatus?.bus?.routeId?.stops || [];
+    const hasValidPosition = currentPosition && isValidCoord(currentPosition.lat, currentPosition.lng);
+    const center = hasValidPosition ? currentPosition : CAMPUS_CENTER;
+    const routeStops = (tripStatus?.bus?.routeId?.stops || []).filter(
+      stop => isValidCoord(stop.latitude, stop.longitude)
+    );
 
     return (
       <GoogleMap
@@ -254,7 +263,7 @@ const DriverLiveTrackingView = () => {
         zoom={15}
         options={mapOptions}
       >
-        {currentPosition && (
+        {hasValidPosition && (
           <Marker
             position={currentPosition}
             icon={{

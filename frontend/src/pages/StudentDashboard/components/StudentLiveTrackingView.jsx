@@ -172,8 +172,15 @@ const StudentLiveTrackingView = () => {
     );
   };
 
+  const isValidCoord = (lat, lng) => {
+    return typeof lat === 'number' && typeof lng === 'number' &&
+           isFinite(lat) && isFinite(lng) &&
+           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  };
+
   const renderMap = () => {
     if (!hasApiKey) {
+      const hasValidBusLoc = busLocation && isValidCoord(busLocation.lat, busLocation.lng);
       return (
         <Box
           sx={{
@@ -193,7 +200,7 @@ const StudentLiveTrackingView = () => {
           <Typography variant="body2" color="grey.500">
             Google Maps API key not configured
           </Typography>
-          {busLocation && (
+          {hasValidBusLoc && (
             <Typography variant="body2" color="primary" sx={{ mt: 2 }}>
               Bus at: {busLocation.lat.toFixed(5)}, {busLocation.lng.toFixed(5)}
             </Typography>
@@ -202,8 +209,12 @@ const StudentLiveTrackingView = () => {
       );
     }
 
-    const center = busLocation || studentLocation || CAMPUS_CENTER;
-    const routeStops = busData?.routeId?.stops || [];
+    const hasValidBusLoc = busLocation && isValidCoord(busLocation.lat, busLocation.lng);
+    const hasValidStudentLoc = studentLocation && isValidCoord(studentLocation.lat, studentLocation.lng);
+    const center = hasValidBusLoc ? busLocation : (hasValidStudentLoc ? studentLocation : CAMPUS_CENTER);
+    const routeStops = (busData?.routeId?.stops || []).filter(
+      stop => isValidCoord(stop.latitude, stop.longitude)
+    );
 
     return (
       <GoogleMap
@@ -212,7 +223,7 @@ const StudentLiveTrackingView = () => {
         zoom={14}
         options={mapOptions}
       >
-        {busLocation && (
+        {hasValidBusLoc && (
           <Marker
             position={busLocation}
             icon={{
@@ -228,7 +239,7 @@ const StudentLiveTrackingView = () => {
           />
         )}
 
-        {showBusInfo && busLocation && (
+        {showBusInfo && hasValidBusLoc && (
           <InfoWindow
             position={busLocation}
             onCloseClick={() => setShowBusInfo(false)}
@@ -254,7 +265,7 @@ const StudentLiveTrackingView = () => {
           </InfoWindow>
         )}
 
-        {studentLocation && (
+        {hasValidStudentLoc && (
           <Marker
             position={studentLocation}
             icon={{

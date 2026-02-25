@@ -79,6 +79,12 @@ const BusMap = ({ routeId, height = 400, buses: externalBuses, showRefresh = tru
     setMap(mapInstance);
   }, []);
 
+  const isValidCoord = (lat, lng) => {
+    return typeof lat === 'number' && typeof lng === 'number' &&
+           isFinite(lat) && isFinite(lng) &&
+           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  };
+
   const getBusIcon = (bus) => {
     const color = bus.isOnTrip ? '#22c55e' : '#3B82F6';
     return {
@@ -94,7 +100,7 @@ const BusMap = ({ routeId, height = 400, buses: externalBuses, showRefresh = tru
 
   const renderGoogleMap = () => {
     const validBuses = busLocations.filter(
-      bus => bus.location?.latitude && bus.location?.longitude
+      bus => bus.location && isValidCoord(bus.location.latitude, bus.location.longitude)
     );
 
     const center = validBuses.length > 0
@@ -122,7 +128,7 @@ const BusMap = ({ routeId, height = 400, buses: externalBuses, showRefresh = tru
             />
           ))}
 
-          {selectedBus && (
+          {selectedBus && selectedBus.location && isValidCoord(selectedBus.location.latitude, selectedBus.location.longitude) && (
             <InfoWindow
               position={{
                 lat: selectedBus.location.latitude,
