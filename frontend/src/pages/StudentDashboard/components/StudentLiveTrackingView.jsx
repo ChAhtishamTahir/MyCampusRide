@@ -22,7 +22,7 @@ import {
 import { GoogleMap, Marker, Polyline, InfoWindow } from '@react-google-maps/api';
 import { useMap } from '../../../components/MapProvider';
 import { useAuth } from '../../../context/AuthContext';
-import { socketService, busService } from '../../../services';
+import { socketService, trackingService } from '../../../services';
 import { haversineDistance, formatDistance, calculateETA, formatETA, getDistanceStatus } from '../../../utils/geoUtils';
 import {
   BRAND_COLORS,
@@ -57,6 +57,14 @@ const StudentLiveTrackingView = () => {
   const [eta, setEta] = useState(null);
 
   const socketConnectedRef = useRef(false);
+  const routeIdRef = useRef(null);
+  const busDataRef = useRef(null);
+  const studentWatchIdRef = useRef(null);
+
+  // Keep busDataRef in sync with busData state
+  useEffect(() => {
+    busDataRef.current = busData;
+  }, [busData]);
 
   useEffect(() => {
     fetchAssignedBus();
@@ -64,17 +72,30 @@ const StudentLiveTrackingView = () => {
 
     return () => {
       if (socketConnectedRef.current) {
-        socketService.leaveRoute(busData?.routeId?._id);
-        socketService.disconnect();
+        socketService.leaveRoute(routeIdRef.current);
+        socketService.offBusLocationUpdate(handleBusLocationUpdate);
+        socketService.offTripStarted(handleTripStarted);
+        socketService.offTripStopped(handleTripStopped);
         socketConnectedRef.current = false;
+      }
+      if (studentWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(studentWatchIdRef.current);
+        studentWatchIdRef.current = null;
       }
     };
   }, []);
 
   useEffect(() => {
-    if (busData?.routeId?._id && !socketConnectedRef.current) {
+    const routeId = busData?.routeId?._id;
+    if (!routeId) return;
+
+    if (socketConnectedRef.current) {
+      // If we are already connected to a different route, leave it
+      if (routeIdRef.current && routeIdRef.current !== routeId) {
+        socketService.leaveRoute(routeIdRef.current);
+      }
+    } else {
       socketService.connect();
-      socketService.joinRoute(busData.routeId._id);
       socketConnectedRef.current = true;
 
       socketService.onBusLocationUpdate(handleBusLocationUpdate);
@@ -82,13 +103,10 @@ const StudentLiveTrackingView = () => {
       socketService.onTripStopped(handleTripStopped);
     }
 
-    return () => {
-      if (socketConnectedRef.current) {
-        socketService.offBusLocationUpdate(handleBusLocationUpdate);
-        socketService.offTripStarted(handleTripStarted);
-        socketService.offTripStopped(handleTripStopped);
-      }
-    };
+    if (routeIdRef.current !== routeId) {
+      socketService.joinRoute(routeId);
+      routeIdRef.current = routeId;
+    }
   }, [busData?.routeId?._id]);
 
   useEffect(() => {
@@ -108,7 +126,8 @@ const StudentLiveTrackingView = () => {
   }, [busLocation, studentLocation]);
 
   const handleBusLocationUpdate = (data) => {
-    if (data.busId === busData?._id || data.busId === busData?.bus?._id) {
+    const currentBusData = busDataRef.current;
+    if (data.busId === currentBusData?._id) {
       setBusLocation({
         lat: data.location.latitude,
         lng: data.location.longitude,
@@ -119,13 +138,15 @@ const StudentLiveTrackingView = () => {
   };
 
   const handleTripStarted = (data) => {
-    if (data.busId === busData?._id || data.busId === busData?.bus?._id) {
+    const currentBusData = busDataRef.current;
+    if (data.busId === currentBusData?._id) {
       fetchAssignedBus();
     }
   };
 
   const handleTripStopped = (data) => {
-    if (data.busId === busData?._id || data.busId === busData?.bus?._id) {
+    const currentBusData = busDataRef.current;
+    if (data.busId === currentBusData?._id) {
       setBusLocation(null);
       fetchAssignedBus();
     }
@@ -134,15 +155,17 @@ const StudentLiveTrackingView = () => {
   const fetchAssignedBus = async () => {
     try {
       setIsLoading(true);
-      const response = await busService.getStudentBus();
-      if (response.data?.success && response.data.data) {
-        setBusData(response.data.data);
-        if (response.data.data.currentLocation?.latitude) {
+      const response = await trackingService.getStudentTripStatus();
+      if (response.data?.success && response.data.data?.bus) {
+        const bus = response.data.data.bus;
+        setBusData(bus);
+        if (bus.currentLocation?.latitude && bus.currentLocation?.longitude &&
+          (bus.currentLocation.latitude !== 0 || bus.currentLocation.longitude !== 0)) {
           setBusLocation({
-            lat: response.data.data.currentLocation.latitude,
-            lng: response.data.data.currentLocation.longitude,
-            speed: response.data.data.currentLocation.speed || 0,
-            heading: response.data.data.currentLocation.heading || 0,
+            lat: bus.currentLocation.latitude,
+            lng: bus.currentLocation.longitude,
+            speed: bus.currentLocation.speed || 0,
+            heading: bus.currentLocation.heading || 0,
           });
         }
       }
@@ -158,7 +181,7 @@ const StudentLiveTrackingView = () => {
   const requestStudentLocation = () => {
     if (!navigator.geolocation) return;
 
-    navigator.geolocation.getCurrentPosition(
+    studentWatchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
         setStudentLocation({
           lat: position.coords.latitude,
@@ -168,14 +191,15 @@ const StudentLiveTrackingView = () => {
       (err) => {
         console.error('Student location error:', err);
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   };
 
   const isValidCoord = (lat, lng) => {
     return typeof lat === 'number' && typeof lng === 'number' &&
-           isFinite(lat) && isFinite(lng) &&
-           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+      isFinite(lat) && isFinite(lng) &&
+      lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+      (lat !== 0 || lng !== 0);
   };
 
   const renderMap = () => {

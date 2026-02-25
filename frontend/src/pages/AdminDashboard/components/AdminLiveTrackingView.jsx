@@ -88,7 +88,6 @@ const AdminLiveTrackingView = () => {
         socketService.offBusLocationUpdate(handleBusLocationUpdate);
         socketService.offTripStarted(handleTripStarted);
         socketService.offTripStopped(handleTripStopped);
-        socketService.disconnect();
         socketConnectedRef.current = false;
       }
     };
@@ -150,8 +149,9 @@ const AdminLiveTrackingView = () => {
 
   const isValidCoord = (lat, lng) => {
     return typeof lat === 'number' && typeof lng === 'number' &&
-           isFinite(lat) && isFinite(lng) &&
-           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+      isFinite(lat) && isFinite(lng) &&
+      lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+      (lat !== 0 || lng !== 0);
   };
 
   const filteredBuses = selectedRoute === 'all'

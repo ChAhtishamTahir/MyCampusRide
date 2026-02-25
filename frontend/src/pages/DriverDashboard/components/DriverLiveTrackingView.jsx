@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -20,7 +20,7 @@ import {
   DirectionsBus,
   LocationOn,
 } from '@mui/icons-material';
-import { GoogleMap, Marker, Polyline } from '@react-google-maps/api';
+import { GoogleMap, Marker } from '@react-google-maps/api';
 import { useMap } from '../../../components/MapProvider';
 import { trackingService } from '../../../services';
 import { toast } from 'react-toastify';
@@ -59,6 +59,7 @@ const DriverLiveTrackingView = () => {
 
   const watchIdRef = useRef(null);
   const updateIntervalRef = useRef(null);
+  const currentPositionRef = useRef(null);
 
   useEffect(() => {
     fetchTripStatus();
@@ -119,10 +120,14 @@ const DriverLiveTrackingView = () => {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        setCurrentPosition({
+        const newPos = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        });
+          speed: position.coords.speed != null ? position.coords.speed * 3.6 : 0, // m/s → km/h
+          heading: position.coords.heading != null ? position.coords.heading : 0,
+        };
+        setCurrentPosition(newPos);
+        currentPositionRef.current = newPos;
         setGeoError(null);
       },
       (err) => {
@@ -150,26 +155,27 @@ const DriverLiveTrackingView = () => {
     }
 
     updateIntervalRef.current = setInterval(() => {
-      if (currentPosition && tripStatus?.isOnTrip) {
-        sendLocationUpdate();
+      const pos = currentPositionRef.current;
+      if (pos) {
+        sendLocationUpdate(pos);
       }
     }, LOCATION_UPDATE_INTERVAL);
   };
 
-  const sendLocationUpdate = useCallback(async () => {
-    if (!currentPosition) return;
+  const sendLocationUpdate = async (pos) => {
+    if (!pos) return;
 
     try {
       await trackingService.updateLocation({
-        latitude: currentPosition.lat,
-        longitude: currentPosition.lng,
-        speed: 0,
-        heading: 0,
+        latitude: pos.lat,
+        longitude: pos.lng,
+        speed: pos.speed || 0,
+        heading: pos.heading || 0,
       });
     } catch (err) {
       console.error('Failed to send location update:', err);
     }
-  }, [currentPosition]);
+  };
 
   const getGeoErrorMessage = (error) => {
     switch (error.code) {
@@ -217,7 +223,8 @@ const DriverLiveTrackingView = () => {
   const isValidCoord = (lat, lng) => {
     return typeof lat === 'number' && typeof lng === 'number' &&
            isFinite(lat) && isFinite(lng) &&
-           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180 &&
+           (lat !== 0 || lng !== 0);
   };
 
   const renderMap = () => {
@@ -294,17 +301,7 @@ const DriverLiveTrackingView = () => {
                 title={stop.name || `Stop ${index + 1}`}
               />
             ))}
-            <Polyline
-              path={routeStops.map((stop) => ({
-                lat: stop.latitude,
-                lng: stop.longitude,
-              }))}
-              options={{
-                strokeColor: '#3B82F6',
-                strokeOpacity: 0.8,
-                strokeWeight: 4,
-              }}
-            />
+
           </>
         )}
       </GoogleMap>

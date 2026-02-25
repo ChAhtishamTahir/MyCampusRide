@@ -10,7 +10,7 @@
  * Features brand styling with color-coded status indicators.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container, Card, CardContent, Typography, Box, Alert, Grid,
   LinearProgress, Chip, CircularProgress
@@ -19,6 +19,7 @@ import {
   LocationOn, Speed, Timeline, Flag
 } from '@mui/icons-material';
 import { authService, trackingService, busService } from '../../../services';
+import { socketService } from '../../../services';
 import {
   BRAND_COLORS,
   CARD_STYLES,
@@ -34,6 +35,10 @@ const StudentTrackingView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+
+  const assignedBusRef = useRef(null);
+  const socketConnectedRef = useRef(false);
+  const routeIdRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,10 +61,11 @@ const StudentTrackingView = () => {
             setAssignedBus(currentUser.assignedBus);
 
             try {
-              const tripStatusResponse = await trackingService.getMyTripStatus();
+              const tripStatusResponse = await trackingService.getStudentTripStatus();
               if (!isMounted) return;
 
-              const status = tripStatusResponse.data?.data?.status || 'idle';
+              const isOnTrip = tripStatusResponse.data?.data?.isOnTrip || false;
+              const status = isOnTrip ? 'on_trip' : 'idle';
               setTripStatus(status);
 
               if (status === 'on_trip') {
@@ -93,6 +99,13 @@ const StudentTrackingView = () => {
 
     return () => {
       isMounted = false;
+      if (socketConnectedRef.current) {
+        socketService.leaveRoute(routeIdRef.current);
+        socketService.offBusLocationUpdate(handleSocketLocationUpdate);
+        socketService.offTripStarted(handleSocketTripStarted);
+        socketService.offTripStopped(handleSocketTripStopped);
+        socketConnectedRef.current = false;
+      }
     };
   }, []);
 
@@ -110,6 +123,52 @@ const StudentTrackingView = () => {
 
     return () => clearInterval(locationInterval);
   }, [assignedBus?._id, tripStatus]);
+
+  // Connect socket for real-time updates when bus is assigned
+  useEffect(() => {
+    if (assignedBus?._id) {
+      assignedBusRef.current = assignedBus;
+
+      // Determine the routeId for socket room
+      const rId = typeof assignedBus.routeId === 'object' ? assignedBus.routeId?._id : assignedBus.routeId;
+      if (rId && !socketConnectedRef.current) {
+        routeIdRef.current = rId;
+        socketService.connect();
+        socketService.joinRoute(rId);
+        socketConnectedRef.current = true;
+
+        socketService.onBusLocationUpdate(handleSocketLocationUpdate);
+        socketService.onTripStarted(handleSocketTripStarted);
+        socketService.onTripStopped(handleSocketTripStopped);
+      }
+    }
+  }, [assignedBus?._id]);
+
+  // Socket event handlers using refs to avoid stale closures
+  const handleSocketLocationUpdate = (data) => {
+    const bus = assignedBusRef.current;
+    if (data.busId === bus?._id) {
+      setBusLocation({
+        location: data.location,
+        lastUpdate: data.lastUpdate,
+      });
+    }
+  };
+
+  const handleSocketTripStarted = (data) => {
+    const bus = assignedBusRef.current;
+    if (data.busId === bus?._id) {
+      setTripStatus('on_trip');
+    }
+  };
+
+  const handleSocketTripStopped = (data) => {
+    const bus = assignedBusRef.current;
+    if (data.busId === bus?._id) {
+      setTripStatus('idle');
+      setBusLocation(null);
+    }
+  };
 
   // Show loading spinner with brand color
   if (loading) {
@@ -195,12 +254,12 @@ const StudentTrackingView = () => {
                   <Chip
                     label={
                       tripStatus === 'on_trip' ? 'On Trip' :
-                      tripStatus === 'arrived' ? 'Arrived' : 'Not on Trip'
+                        tripStatus === 'arrived' ? 'Arrived' : 'Not on Trip'
                     }
                     sx={{
                       bgcolor: tripStatus === 'on_trip' ? BRAND_COLORS.warningOrange :
-                               tripStatus === 'arrived' ? BRAND_COLORS.successGreen :
-                               BRAND_COLORS.slate400,
+                        tripStatus === 'arrived' ? BRAND_COLORS.successGreen :
+                          BRAND_COLORS.slate400,
                       color: BRAND_COLORS.white,
                       fontWeight: 600,
                       borderRadius: BORDER_RADIUS.md,

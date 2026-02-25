@@ -17,7 +17,7 @@ import {
   Refresh,
   Warning,
 } from '@mui/icons-material';
-import { GoogleMap, Marker, InfoWindow, Polyline } from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { useMap } from './MapProvider';
 import { trackingAPI } from '../api/api';
 
@@ -81,8 +81,8 @@ const BusMap = ({ routeId, height = 400, buses: externalBuses, showRefresh = tru
 
   const isValidCoord = (lat, lng) => {
     return typeof lat === 'number' && typeof lng === 'number' &&
-           isFinite(lat) && isFinite(lng) &&
-           lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+      isFinite(lat) && isFinite(lng) &&
+      lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
   };
 
   const getBusIcon = (bus) => {

@@ -7,7 +7,8 @@ const {
   getBusLocation,
   getActiveBusLocations,
   getSimulatedLocations,
-  getMyTripStatus
+  getMyTripStatus,
+  getStudentTripStatus
 } = require('../controllers/trackingController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { driverOnly, adminOrDriver } = require('../middleware/roleMiddleware');
@@ -22,6 +23,7 @@ router.put('/update-location', driverOnly, updateLocation);
 router.get('/my-trip', driverOnly, getMyTripStatus);
 
 // Public routes (authenticated users)
+router.get('/student-trip-status', getStudentTripStatus);
 router.get('/bus/:busId', getBusLocation);
 router.get('/active-buses', getActiveBusLocations);
 router.get('/simulate', getSimulatedLocations);

@@ -13,6 +13,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 
 // Load environment variables from .env file
 // This allows us to keep sensitive information (like database URLs and secrets) secure
@@ -29,9 +30,37 @@ const server = http.createServer(app);
 // Initialize Socket.io with CORS configuration
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.NODE_ENV === 'production' 
+      ? process.env.FRONTEND_URL 
+      : true, // Allow all origins (e.g., local network IP testing) mirroring the request
     methods: ['GET', 'POST'],
     credentials: true
+  }
+});
+
+// Socket.io authentication middleware
+io.use((socket, next) => {
+  try {
+    const cookieHeader = socket.handshake.headers.cookie || '';
+    const cookies = {};
+    cookieHeader.split(';').forEach(c => {
+      const [name, ...rest] = c.split('=');
+      if (name && rest.length) {
+        cookies[name.trim()] = decodeURIComponent(rest.join('=').trim());
+      }
+    });
+
+    const token = cookies.token;
+    if (!token) {
+      return next(new Error('Authentication required'));
+    }
+
+    const secret = process.env.JWT_SECRET || 'AhtKhz1314MyCampusRideSecretKey2024';
+    const decoded = jwt.verify(token, secret);
+    socket.userId = decoded.userId;
+    next();
+  } catch (err) {
+    next(new Error('Authentication failed'));
   }
 });
 
@@ -74,10 +103,10 @@ io.on('connection', (socket) => {
 // CORS allows our frontend (running on a different port) to communicate with this backend
 // Without CORS, browsers block requests between different origins for security
 app.use(cors({
-  // Allow requests from the frontend URL
-  // In development: http://localhost:3000 (or 5173 for Vite)
-  // In production: your deployed frontend URL
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  // Allow requests from the frontend URL, dynamically allowing any in development for LAN testing
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : true,
   // Allow cookies to be sent with requests (needed for authentication)
   credentials: true
 }));

@@ -10,6 +10,7 @@
  */
 
 const Bus = require('../models/Bus');
+const User = require('../models/User');
 const Route = require('../models/Route');
 const Notification = require('../models/Notification');
 const { asyncHandler } = require('../middleware/errorHandler');
@@ -23,7 +24,7 @@ const startTrip = asyncHandler(async (req, res) => {
   // Find driver's assigned bus
   const bus = await Bus.findOne({ driverId })
     .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
-  
+
   if (!bus) {
     return res.status(404).json({
       success: false,
@@ -64,20 +65,21 @@ const startTrip = asyncHandler(async (req, res) => {
     req.io.to('all-buses').emit('tripStarted', tripData);
   }
 
-  // Create notification for students on this route
-  await Notification.createSystemNotification(
-    'Trip Started',
-    `Bus ${bus.busNumber} has started its trip on route ${bus.routeId.routeName}`,
-    'student',
-    {
+  // Create notification for students assigned to this bus
+  const tripStartStudents = await User.find({ assignedBus: bus._id, role: 'student' }).select('_id');
+  if (tripStartStudents.length > 0) {
+    await Notification.insertMany(tripStartStudents.map(student => ({
+      title: 'Trip Started',
+      message: `Bus ${bus.busNumber} has started its trip on route ${bus.routeId.routeName}`,
       type: 'info',
+      senderRole: 'system',
+      receiverRole: 'student',
+      receiverId: student._id,
       priority: 'medium',
-      relatedEntity: {
-        type: 'bus',
-        id: bus._id
-      }
-    }
-  );
+      relatedEntity: { type: 'bus', id: bus._id },
+      metadata: { routeId: bus.routeId._id }
+    })));
+  }
 
   res.json({
     success: true,
@@ -98,7 +100,7 @@ const stopTrip = asyncHandler(async (req, res) => {
   // Find driver's assigned bus
   const bus = await Bus.findOne({ driverId })
     .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
-  
+
   if (!bus) {
     return res.status(404).json({
       success: false,
@@ -119,10 +121,17 @@ const stopTrip = asyncHandler(async (req, res) => {
 
   const routeId = bus.routeId._id;
 
-  // Stop trip
+  // Stop trip and clear stale location data
   bus.isOnTrip = false;
   bus.status = 'available';
   bus.tripStartTime = null;
+  bus.currentLocation = {
+    latitude: 0,
+    longitude: 0,
+    address: 'Location not available',
+    speed: 0,
+    heading: 0
+  };
   await bus.save();
 
   // Emit Socket.io event for real-time updates
@@ -138,20 +147,21 @@ const stopTrip = asyncHandler(async (req, res) => {
     req.io.to('all-buses').emit('tripStopped', tripData);
   }
 
-  // Create notification for students on this route
-  await Notification.createSystemNotification(
-    'Trip Completed',
-    `Bus ${bus.busNumber} has completed its trip on route ${bus.routeId.routeName}. Duration: ${tripDurationMinutes} minutes`,
-    'student',
-    {
+  // Create notification for students assigned to this bus
+  const tripStopStudents = await User.find({ assignedBus: bus._id, role: 'student' }).select('_id');
+  if (tripStopStudents.length > 0) {
+    await Notification.insertMany(tripStopStudents.map(student => ({
+      title: 'Trip Completed',
+      message: `Bus ${bus.busNumber} has completed its trip on route ${bus.routeId.routeName}. Duration: ${tripDurationMinutes} minutes`,
       type: 'success',
+      senderRole: 'system',
+      receiverRole: 'student',
+      receiverId: student._id,
       priority: 'medium',
-      relatedEntity: {
-        type: 'bus',
-        id: bus._id
-      }
-    }
-  );
+      relatedEntity: { type: 'bus', id: bus._id },
+      metadata: { routeId: routeId }
+    })));
+  }
 
   res.json({
     success: true,
@@ -169,6 +179,17 @@ const stopTrip = asyncHandler(async (req, res) => {
 const updateLocation = asyncHandler(async (req, res) => {
   const { latitude, longitude, address, speed, heading } = req.body;
   const driverId = req.user._id;
+
+  // Validate coordinates
+  if (latitude == null || longitude == null ||
+    typeof latitude !== 'number' || typeof longitude !== 'number' ||
+    !isFinite(latitude) || !isFinite(longitude) ||
+    latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid coordinates. Latitude must be between -90 and 90, longitude between -180 and 180.'
+    });
+  }
 
   // Find driver's assigned bus with route info
   const bus = await Bus.findOne({ driverId }).populate('routeId', 'routeName');
@@ -230,7 +251,7 @@ const getBusLocation = asyncHandler(async (req, res) => {
   const bus = await Bus.findById(req.params.busId)
     .populate('driverId', 'name phone')
     .populate('routeId', 'routeName stops');
-  
+
   if (!bus) {
     return res.status(404).json({
       success: false,
@@ -254,7 +275,7 @@ const getBusLocation = asyncHandler(async (req, res) => {
 // @route   GET /api/tracking/active-buses
 // @access  Private
 const getActiveBusLocations = asyncHandler(async (req, res) => {
-  const activeBuses = await Bus.find({ 
+  const activeBuses = await Bus.find({
     isOnTrip: true,
     status: 'on_trip'
   })
@@ -299,7 +320,7 @@ const getSimulatedLocations = asyncHandler(async (req, res) => {
   const simulatedLocations = buses.map(bus => {
     const route = bus.routeId;
     const stops = route.stops || [];
-    
+
     if (stops.length === 0) {
       return {
         busId: bus._id,
@@ -307,9 +328,9 @@ const getSimulatedLocations = asyncHandler(async (req, res) => {
         driver: bus.driverId,
         route: bus.routeId,
         location: {
-          latitude: 40.7128 + (Math.random() - 0.5) * 0.01,
-          longitude: -74.0060 + (Math.random() - 0.5) * 0.01,
-          address: 'Simulated Location'
+          latitude: 30.032 + (Math.random() - 0.5) * 0.01,
+          longitude: 72.316 + (Math.random() - 0.5) * 0.01,
+          address: 'COMSATS Vehari (Simulated)'
         },
         isOnTrip: bus.isOnTrip,
         lastUpdate: new Date(),
@@ -321,10 +342,13 @@ const getSimulatedLocations = asyncHandler(async (req, res) => {
     // Pick a random stop or interpolate between stops
     const randomStopIndex = Math.floor(Math.random() * stops.length);
     const currentStop = stops[randomStopIndex];
-    
+
     // Add some random offset to simulate movement
     const latOffset = (Math.random() - 0.5) * 0.001;
     const lngOffset = (Math.random() - 0.5) * 0.001;
+
+    // Guard against stops without coordinates
+    const hasCoords = typeof currentStop.latitude === 'number' && typeof currentStop.longitude === 'number';
 
     return {
       busId: bus._id,
@@ -332,9 +356,9 @@ const getSimulatedLocations = asyncHandler(async (req, res) => {
       driver: bus.driverId,
       route: bus.routeId,
       location: {
-        latitude: currentStop.latitude + latOffset,
-        longitude: currentStop.longitude + lngOffset,
-        address: currentStop.address
+        latitude: hasCoords ? currentStop.latitude + latOffset : 30.032 + latOffset * 10,
+        longitude: hasCoords ? currentStop.longitude + lngOffset : 72.316 + lngOffset * 10,
+        address: currentStop.address || 'COMSATS Vehari (Simulated)'
       },
       isOnTrip: bus.isOnTrip,
       lastUpdate: new Date(),
@@ -359,7 +383,7 @@ const getMyTripStatus = asyncHandler(async (req, res) => {
 
   const bus = await Bus.findOne({ driverId })
     .populate('routeId', 'routeName stops departureTime estimatedDuration distance');
-  
+
   if (!bus) {
     return res.status(404).json({
       success: false,
@@ -373,7 +397,7 @@ const getMyTripStatus = asyncHandler(async (req, res) => {
     tripStartTime: bus.tripStartTime,
     currentLocation: bus.currentLocation,
     lastLocationUpdate: bus.lastLocationUpdate,
-    tripDuration: bus.isOnTrip && bus.tripStartTime 
+    tripDuration: bus.isOnTrip && bus.tripStartTime
       ? Math.round((new Date() - bus.tripStartTime) / (1000 * 60))
       : 0
   };
@@ -384,6 +408,42 @@ const getMyTripStatus = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get student's trip status (looks up the student's assigned bus)
+// @route   GET /api/tracking/student-trip-status
+// @access  Private (any authenticated user)
+const getStudentTripStatus = asyncHandler(async (req, res) => {
+  const student = await User.findById(req.user._id).populate('assignedBus');
+
+  if (!student || !student.assignedBus) {
+    return res.status(404).json({
+      success: false,
+      message: 'No bus assigned to you'
+    });
+  }
+
+  const bus = await Bus.findById(student.assignedBus._id || student.assignedBus)
+    .populate('routeId', 'routeName stops')
+    .populate('driverId', 'name phone');
+
+  if (!bus) {
+    return res.status(404).json({
+      success: false,
+      message: 'Assigned bus not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      bus,
+      isOnTrip: bus.isOnTrip,
+      currentLocation: bus.currentLocation,
+      lastLocationUpdate: bus.lastLocationUpdate,
+      tripStartTime: bus.tripStartTime
+    }
+  });
+});
+
 module.exports = {
   startTrip,
   stopTrip,
@@ -391,7 +451,8 @@ module.exports = {
   getBusLocation,
   getActiveBusLocations,
   getSimulatedLocations,
-  getMyTripStatus
+  getMyTripStatus,
+  getStudentTripStatus
 };
 
 

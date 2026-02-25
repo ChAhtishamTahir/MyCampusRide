@@ -55,3 +55,13 @@ MyCampusRide is a **campus bus transport management system** with three user por
 | **Map placement** | Dedicated "Live Tracking" sidebar tab per portal |
 | **Scroll safety** | `gestureHandling: 'cooperative'` (Ctrl+Scroll to zoom) |
 | **Responsiveness** | Maps resize on mobile/tablet/desktop |
+
+---
+
+## Testing on Mobile Devices
+To test the Driver portal's live tracking on a physical mobile device, the frontend must be served over **HTTPS** or `localhost`. Modern mobile browsers intentionally block the Geolocation API on non-secure `http://` network IPs (e.g. `http://192.168.1.5:3000`).
+To test over LAN on your phone, use a secure tunnel like **ngrok**:
+```bash
+ngrok http 3000
+```
+Then access the generated `https://...ngrok.app` URL on your mobile browser.
