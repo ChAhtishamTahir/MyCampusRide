@@ -51,6 +51,19 @@ const startTrip = asyncHandler(async (req, res) => {
   bus.tripStartTime = new Date();
   await bus.save();
 
+  // Emit Socket.io event for real-time updates
+  if (req.io) {
+    const tripData = {
+      busId: bus._id,
+      busNumber: bus.busNumber,
+      routeId: bus.routeId._id,
+      routeName: bus.routeId.routeName,
+      tripStartTime: bus.tripStartTime
+    };
+    req.io.to(`route:${bus.routeId._id}`).emit('tripStarted', tripData);
+    req.io.to('all-buses').emit('tripStarted', tripData);
+  }
+
   // Create notification for students on this route
   await Notification.createSystemNotification(
     'Trip Started',
@@ -104,11 +117,26 @@ const stopTrip = asyncHandler(async (req, res) => {
   const tripDuration = new Date() - bus.tripStartTime;
   const tripDurationMinutes = Math.round(tripDuration / (1000 * 60));
 
+  const routeId = bus.routeId._id;
+
   // Stop trip
   bus.isOnTrip = false;
   bus.status = 'available';
   bus.tripStartTime = null;
   await bus.save();
+
+  // Emit Socket.io event for real-time updates
+  if (req.io) {
+    const tripData = {
+      busId: bus._id,
+      busNumber: bus.busNumber,
+      routeId: routeId,
+      routeName: bus.routeId.routeName,
+      tripDuration: tripDurationMinutes
+    };
+    req.io.to(`route:${routeId}`).emit('tripStopped', tripData);
+    req.io.to('all-buses').emit('tripStopped', tripData);
+  }
 
   // Create notification for students on this route
   await Notification.createSystemNotification(
@@ -139,12 +167,12 @@ const stopTrip = asyncHandler(async (req, res) => {
 // @route   PUT /api/tracking/update-location
 // @access  Private/Driver
 const updateLocation = asyncHandler(async (req, res) => {
-  const { latitude, longitude, address } = req.body;
+  const { latitude, longitude, address, speed, heading } = req.body;
   const driverId = req.user._id;
 
-  // Find driver's assigned bus
-  const bus = await Bus.findOne({ driverId });
-  
+  // Find driver's assigned bus with route info
+  const bus = await Bus.findOne({ driverId }).populate('routeId', 'routeName');
+
   if (!bus) {
     return res.status(404).json({
       success: false,
@@ -159,14 +187,30 @@ const updateLocation = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update location
+  // Update location with speed and heading
   bus.currentLocation = {
     latitude,
     longitude,
-    address: address || 'Location not available'
+    address: address || 'Location not available',
+    speed: speed || 0,
+    heading: heading || 0
   };
   bus.lastLocationUpdate = new Date();
   await bus.save();
+
+  // Emit Socket.io event for real-time location updates
+  if (req.io && bus.routeId) {
+    const locationData = {
+      busId: bus._id,
+      busNumber: bus.busNumber,
+      routeId: bus.routeId._id,
+      location: bus.currentLocation,
+      lastUpdate: bus.lastLocationUpdate,
+      tripStartTime: bus.tripStartTime
+    };
+    req.io.to(`route:${bus.routeId._id}`).emit('busLocationUpdate', locationData);
+    req.io.to('all-buses').emit('busLocationUpdate', locationData);
+  }
 
   res.json({
     success: true,

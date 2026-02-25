@@ -22,6 +22,7 @@ import OverviewView from './components/OverviewView';
 import UsersView from './components/UsersView';
 import BusesView from './components/BusesView';
 import RoutesView from './components/RoutesView';
+import AdminLiveTrackingView from './components/AdminLiveTrackingView';
 import FeeManagementView from './components/FeeManagementView';
 import BusAssignmentView from './components/BusAssignmentView';
 import DisplacedStudentsView from './components/DisplacedStudentsView';
@@ -86,6 +87,7 @@ const AdminDashboard = () => {
             <Route path="users" element={<UsersView />} />
             <Route path="buses" element={<BusesView />} />
             <Route path="routes" element={<RoutesView />} />
+            <Route path="live-tracking" element={<AdminLiveTrackingView />} />
             <Route path="fees" element={<FeeManagementView />} />
             <Route path="bus-assignment" element={<BusAssignmentView />} />
             <Route path="displaced" element={<DisplacedStudentsView />} />

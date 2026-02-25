@@ -36,6 +36,17 @@ const busSchema = new mongoose.Schema({
     address: {
       type: String,
       default: 'Location not available'
+    },
+    speed: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    heading: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 360
     }
   },
   isActive: {

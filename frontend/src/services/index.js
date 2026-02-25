@@ -5,3 +5,4 @@ export { busService } from './busService';
 export { routeService } from './routeService';
 export { trackingService } from './trackingService';
 export { notificationService } from './notificationService';
+export { socketService } from './socketService';

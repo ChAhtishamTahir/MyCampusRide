@@ -4,7 +4,7 @@ import {
   Drawer, Avatar, Typography, IconButton, useTheme, useMediaQuery
 } from '@mui/material';
 import {
-  Dashboard, Schedule, LocationOn, Person, QrCode2, Notifications, Logout
+  Dashboard, Schedule, LocationOn, Person, QrCode2, Notifications, Logout, Map
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
@@ -21,6 +21,7 @@ const menuItems = [
   { id: 'overview', label: 'Overview', icon: <Dashboard /> },
   { id: 'schedule', label: 'Schedule', icon: <Schedule /> },
   { id: 'tracking', label: 'Tracking', icon: <LocationOn /> },
+  { id: 'live-tracking', label: 'Live Tracking', icon: <Map /> },
   { id: 'transport-card', label: 'Transport Card', icon: <QrCode2 /> },
   { id: 'notifications', label: 'Notifications', icon: <Notifications /> },
   { id: 'profile', label: 'Profile', icon: <Person /> },

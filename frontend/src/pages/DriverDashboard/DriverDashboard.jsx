@@ -7,6 +7,7 @@ import DriverHeader from './components/DriverHeader';
 import DriverOverviewView from './components/DriverOverviewView';
 import DriverTripsView from './components/DriverTripsView';
 import DriverTrackingView from './components/DriverTrackingView';
+import DriverLiveTrackingView from './components/DriverLiveTrackingView';
 import DriverProfileView from './components/DriverProfileView';
 import DriverPassengersView from './components/DriverPassengersView';
 import DriverNotificationsView from './components/DriverNotificationsView';
@@ -44,6 +45,8 @@ const DriverDashboard = () => {
         return <DriverTripsView />;
       case 'tracking':
         return <DriverTrackingView />;
+      case 'live-tracking':
+        return <DriverLiveTrackingView />;
       case 'profile':
         return <DriverProfileView />;
       case 'notifications':

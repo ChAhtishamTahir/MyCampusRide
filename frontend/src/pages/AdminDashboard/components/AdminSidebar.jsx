@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import {
   People, DirectionsBus, Route as RouteIcon, Notifications,
-  Security, Logout, Dashboard, Payment, Person, AirportShuttle, Warning
+  Security, Logout, Dashboard, Payment, Person, AirportShuttle, Warning, Map
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -35,6 +35,7 @@ const menuItems = [
   { path: '/admin/users', label: 'Users', icon: <People /> },
   { path: '/admin/buses', label: 'Buses', icon: <DirectionsBus /> },
   { path: '/admin/routes', label: 'Routes', icon: <RouteIcon /> },
+  { path: '/admin/live-tracking', label: 'Live Tracking', icon: <Map /> },
   { path: '/admin/fees', label: 'Fee Management', icon: <Payment /> },
   { path: '/admin/bus-assignment', label: 'Bus Assignment', icon: <AirportShuttle /> },
   { path: '/admin/displaced', label: 'Displaced Students', icon: <Warning /> },

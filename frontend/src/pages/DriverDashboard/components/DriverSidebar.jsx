@@ -12,7 +12,7 @@ import {
   Drawer, Avatar, Typography, IconButton, useTheme, useMediaQuery
 } from '@mui/material';
 import {
-  Dashboard, DirectionsBus, LocationOn, Person, Notifications, Logout, People
+  Dashboard, DirectionsBus, LocationOn, Person, Notifications, Logout, People, Map
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import LogoutConfirmDialog from '../../../components/LogoutConfirmDialog';
@@ -32,6 +32,7 @@ const menuItems = [
   { id: 'passengers', label: 'Passengers', icon: <People /> },
   { id: 'trips', label: 'My Route', icon: <DirectionsBus /> },
   { id: 'tracking', label: 'Tracking', icon: <LocationOn /> },
+  { id: 'live-tracking', label: 'Live Tracking', icon: <Map /> },
   { id: 'notifications', label: 'Notifications', icon: <Notifications /> },
   { id: 'profile', label: 'Profile', icon: <Person /> },
 ];

@@ -15,6 +15,7 @@ import StudentHeader from './components/StudentHeader';
 import StudentOverviewView from './components/StudentOverviewView';
 import StudentScheduleView from './components/StudentScheduleView';
 import StudentTrackingView from './components/StudentTrackingView';
+import StudentLiveTrackingView from './components/StudentLiveTrackingView';
 import StudentProfileView from './components/StudentProfileView';
 import VirtualTransportCard from './components/VirtualTransportCard';
 import NotificationPanel from '../../components/NotificationPanel';
@@ -87,6 +88,8 @@ const StudentDashboard = () => {
         return <StudentScheduleView />;
       case 'tracking':
         return <StudentTrackingView />;
+      case 'live-tracking':
+        return <StudentLiveTrackingView />;
       case 'profile':
         return <StudentProfileView />;
       case 'transport-card':

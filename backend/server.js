@@ -6,6 +6,8 @@
  */
 
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -20,6 +22,53 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 // Create Express application instance
 // Express is a web framework that helps us build APIs easily
 const app = express();
+
+// Create HTTP server for Socket.io
+const server = http.createServer(app);
+
+// Initialize Socket.io with CORS configuration
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Make io accessible in route handlers via req.io
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('joinRoute', (routeId) => {
+    socket.join(`route:${routeId}`);
+    console.log(`Socket ${socket.id} joined route:${routeId}`);
+  });
+
+  socket.on('leaveRoute', (routeId) => {
+    socket.leave(`route:${routeId}`);
+    console.log(`Socket ${socket.id} left route:${routeId}`);
+  });
+
+  socket.on('joinAllBuses', () => {
+    socket.join('all-buses');
+    console.log(`Socket ${socket.id} joined all-buses room`);
+  });
+
+  socket.on('leaveAllBuses', () => {
+    socket.leave('all-buses');
+    console.log(`Socket ${socket.id} left all-buses room`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // CORS (Cross-Origin Resource Sharing) Configuration
 // CORS allows our frontend (running on a different port) to communicate with this backend
@@ -111,10 +160,11 @@ mongoose.connect(mongoUri)
 // Use PORT from environment variables, or default to 5000 for local development
 const PORT = process.env.PORT || 5000;
 
-// Start the Express server
-// This makes the server listen for incoming HTTP requests on the specified port
-app.listen(PORT, () => {
-  console.log(`🚌 MyCampusRide Backend running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+// Start the HTTP server (with Socket.io)
+// This makes the server listen for incoming HTTP and WebSocket requests
+server.listen(PORT, () => {
+  console.log(`MyCampusRide Backend running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/api/health`);
+  console.log(`Socket.io enabled for real-time tracking`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
