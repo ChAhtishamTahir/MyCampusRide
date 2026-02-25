@@ -109,8 +109,8 @@ const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobi
         </Box>
       </Box>
 
-      {/* Navigation Menu */}
-      <List sx={{ px: 2, pt: 2, flex: 1 }}>
+      <Box sx={{ flex: 1, overflow: 'auto', pb: 2 }}>
+        <List sx={{ px: 2, pt: 2 }}>
         {menuItems.map((item) => {
           const isActive = activeView === item.id;
           return (
@@ -170,7 +170,8 @@ const DriverSidebar = ({ activeView, setActiveView, user, logout, navigate, mobi
             </ListItem>
           );
         })}
-      </List>
+        </List>
+      </Box>
 
       {/* User Profile Section */}
       <Box sx={{

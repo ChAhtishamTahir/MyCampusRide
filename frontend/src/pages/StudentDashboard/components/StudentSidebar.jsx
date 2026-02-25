@@ -54,8 +54,7 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
   };
 
   const drawerContent = (
-    <>
-      {/* Brand Logo Section with gradient styling */}
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{
         p: 3,
         borderBottom: `1px solid ${BRAND_COLORS.slate300}`
@@ -98,55 +97,47 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
         </Box>
       </Box>
 
-      {/* Navigation Menu Items with brand styling */}
-      <List sx={{ px: 2, pt: 2 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.id} disablePadding>
-            <ListItemButton
-              onClick={() => handleMenuItemClick(item.id)}
-              sx={{
-                mb: 0.5,
-                borderRadius: BORDER_RADIUS.md,
-                // Active state: gradient background with white text
-                ...(activeView === item.id && SIDEBAR_STYLES.menuItemActive),
-                // Inactive state: transparent background
-                bgcolor: activeView === item.id ? undefined : 'transparent',
-                color: activeView === item.id ? BRAND_COLORS.white : BRAND_COLORS.slate700,
-                fontWeight: activeView === item.id ? 600 : 500,
-                '&:hover': {
-                  // Hover on active: slightly darker gradient
-                  ...(activeView === item.id ? {
-                    background: BRAND_COLORS.primaryGradientHover,
-                  } : {
-                    // Hover on inactive: light blue background with slide effect
-                    ...SIDEBAR_STYLES.menuItemHover,
-                    transform: 'translateX(4px)',
-                  }),
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.label}
-                primaryTypographyProps={{
+      <Box sx={{ flex: 1, overflow: 'auto', pb: 2 }}>
+        <List sx={{ px: 2, pt: 2 }}>
+          {menuItems.map((item) => (
+            <ListItem key={item.id} disablePadding>
+              <ListItemButton
+                onClick={() => handleMenuItemClick(item.id)}
+                sx={{
+                  mb: 0.5,
+                  borderRadius: BORDER_RADIUS.md,
+                  ...(activeView === item.id && SIDEBAR_STYLES.menuItemActive),
+                  bgcolor: activeView === item.id ? undefined : 'transparent',
+                  color: activeView === item.id ? BRAND_COLORS.white : BRAND_COLORS.slate700,
                   fontWeight: activeView === item.id ? 600 : 500,
-                  fontSize: '0.95rem'
+                  '&:hover': {
+                    ...(activeView === item.id ? {
+                      background: BRAND_COLORS.primaryGradientHover,
+                    } : {
+                      ...SIDEBAR_STYLES.menuItemHover,
+                      transform: 'translateX(4px)',
+                    }),
+                  },
+                  transition: 'all 0.3s ease',
                 }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    fontWeight: activeView === item.id ? 600 : 500,
+                    fontSize: '0.95rem'
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
 
-      {/* User Profile Section at bottom with brand styling */}
       <Box sx={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         p: 2,
         borderTop: `1px solid ${BRAND_COLORS.slate300}`,
         bgcolor: BRAND_COLORS.slate100,
@@ -191,7 +182,6 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
               {user?.email || 'N/A'}
             </Typography>
           </Box>
-          {/* Logout Button with brand error color */}
           <IconButton
             size="small"
             onClick={handleLogout}
@@ -209,7 +199,7 @@ const StudentSidebar = ({ activeView, setActiveView, user, logout, navigate, mob
           </IconButton>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 
   return (
