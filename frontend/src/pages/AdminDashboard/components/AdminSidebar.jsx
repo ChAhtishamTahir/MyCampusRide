@@ -82,99 +82,103 @@ const AdminSidebar = ({ user, logout, navigate, mobileOpen, handleDrawerToggle }
   // DRAWER CONTENT - Brand styled sidebar navigation
   // ========================================================================
   const drawerContent = (
-    <>
-      {/* Brand Logo Section - Matches landing page style */}
-      <Box sx={{
-        p: 2,
-        borderBottom: `1px solid ${BRAND_COLORS.slate300}`,
-      }}>
-        <Box display="flex" alignItems="center" gap={1.5}>
-          {/* Gradient icon box - matching landing page icon boxes */}
-          <Box sx={{
-            width: 48,
-            height: 48,
-            borderRadius: BORDER_RADIUS.xl,
-            background: BRAND_COLORS.primaryGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
-          }}>
-            <Security sx={{ color: BRAND_COLORS.white, fontSize: 24 }} />
-          </Box>
-          <Box>
-            {/* Brand name with gradient text - matching landing page */}
-            <Typography
-              variant="h6"
-              sx={{
-                ...SIDEBAR_STYLES.logo,
-                fontSize: '1.1rem',
-              }}
-            >
-              MyCampusRide
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: BRAND_COLORS.slate600,
-                fontWeight: 600,
-              }}
-            >
-              Admin Portal
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Navigation Menu - Brand styled with gradient active states */}
-      <List sx={{ px: 2, pt: 1 }}>
-        {menuItems.map((item) => {
-          const active = isActive(item.path);
-          return (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                onClick={() => handleMenuItemClick(item.path)}
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      bgcolor: BRAND_COLORS.white,
+    }}>
+      {/* Scrollable Container for Logo and Menu */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        {/* Brand Logo Section - Matches landing page style */}
+        <Box sx={{
+          p: 2,
+          borderBottom: `1px solid ${BRAND_COLORS.slate300}`,
+        }}>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            {/* Gradient icon box - matching landing page icon boxes */}
+            <Box sx={{
+              width: 48,
+              height: 48,
+              borderRadius: BORDER_RADIUS.xl,
+              background: BRAND_COLORS.primaryGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
+            }}>
+              <Security sx={{ color: BRAND_COLORS.white, fontSize: 24 }} />
+            </Box>
+            <Box>
+              {/* Brand name with gradient text - matching landing page */}
+              <Typography
+                variant="h6"
                 sx={{
-                  mb: 0.25,
-                  borderRadius: BORDER_RADIUS.md,
-                  background: active ? BRAND_COLORS.primaryGradient : 'transparent',
-                  color: active ? BRAND_COLORS.white : BRAND_COLORS.slate700,
-                  boxShadow: active ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none',
-                  py: 1,
-                  '&:hover': {
-                    bgcolor: active ? undefined : 'rgba(14, 165, 233, 0.08)',
-                    background: active ? BRAND_COLORS.primaryGradientHover : undefined,
-                    transform: 'translateX(4px)',
-                  },
-                  transition: 'all 0.3s ease',
+                  ...SIDEBAR_STYLES.logo,
+                  fontSize: '1.1rem',
                 }}
               >
-                <ListItemIcon sx={{
-                  minWidth: 40,
-                  color: 'inherit',
-                  transition: 'transform 0.2s ease',
-                }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontWeight: active ? 700 : 600,
-                    fontSize: '0.95rem',
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
+                MyCampusRide
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: BRAND_COLORS.slate600,
+                  fontWeight: 600,
+                }}
+              >
+                Admin Portal
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
 
-      {/* User Profile Section - Brand styled at bottom */}
+        {/* Navigation Menu - Brand styled with gradient active states */}
+        <List sx={{ px: 2, pt: 1 }}>
+          {menuItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <ListItem key={item.path} disablePadding>
+                <ListItemButton
+                  onClick={() => handleMenuItemClick(item.path)}
+                  sx={{
+                    mb: 0.25,
+                    borderRadius: BORDER_RADIUS.md,
+                    background: active ? BRAND_COLORS.primaryGradient : 'transparent',
+                    color: active ? BRAND_COLORS.white : BRAND_COLORS.slate700,
+                    boxShadow: active ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none',
+                    py: 1,
+                    '&:hover': {
+                      bgcolor: active ? undefined : 'rgba(14, 165, 233, 0.08)',
+                      background: active ? BRAND_COLORS.primaryGradientHover : undefined,
+                      transform: 'translateX(4px)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <ListItemIcon sx={{
+                    minWidth: 40,
+                    color: 'inherit',
+                    transition: 'transform 0.2s ease',
+                  }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: active ? 700 : 600,
+                      fontSize: '0.95rem',
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Box>
+
+      {/* User Profile Section - Fixed at bottom of flex */}
       <Box sx={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         p: 2,
         borderTop: `1px solid ${BRAND_COLORS.slate300}`,
         bgcolor: BRAND_COLORS.slate100,
@@ -239,7 +243,7 @@ const AdminSidebar = ({ user, logout, navigate, mobileOpen, handleDrawerToggle }
           </IconButton>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 
   // ========================================================================

@@ -62,102 +62,106 @@ const StudentSidebar = ({ user, logout, navigate, mobileOpen, handleDrawerToggle
   };
 
   const drawerContent = (
-    <>
-      {/* Brand Logo Section with gradient styling */}
-      <Box sx={{
-        p: 3,
-        borderBottom: `1px solid ${BRAND_COLORS.slate300}`
-      }}>
-        <Box display="flex" alignItems="center" gap={1.5}>
-          {/* Gradient Icon Box */}
-          <Box sx={{
-            width: 48,
-            height: 48,
-            borderRadius: BORDER_RADIUS.xl,
-            background: BRAND_COLORS.primaryGradient,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(14, 165, 233, 0.3)',
-          }}>
-            <Person sx={{ color: BRAND_COLORS.white, fontSize: 28 }} />
-          </Box>
-          <Box>
-            {/* Brand Name with gradient text */}
-            <Typography
-              variant="h6"
-              sx={{
-                ...SIDEBAR_STYLES.logo,
-                fontSize: '1.1rem',
-              }}
-            >
-              MyCampusRide
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: BRAND_COLORS.slate600,
-                fontWeight: 500,
-              }}
-            >
-              Student Portal
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Navigation Menu Items with brand styling */}
-      <List sx={{ px: 2, pt: 2 }}>
-        {menuItems.map((item) => {
-          const active = isActive(item.path);
-          return (
-            <ListItem key={item.path} disablePadding>
-              <ListItemButton
-                onClick={() => handleMenuItemClick(item.path)}
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%',
+      bgcolor: BRAND_COLORS.white 
+    }}>
+      {/* Scrollable area for Logo and Menu */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        {/* Brand Logo Section with gradient styling */}
+        <Box sx={{
+          p: 3,
+          borderBottom: `1px solid ${BRAND_COLORS.slate300}`
+        }}>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            {/* Gradient Icon Box */}
+            <Box sx={{
+              width: 48,
+              height: 48,
+              borderRadius: BORDER_RADIUS.xl,
+              background: BRAND_COLORS.primaryGradient,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(14, 165, 233, 0.3)',
+            }}>
+              <Person sx={{ color: BRAND_COLORS.white, fontSize: 28 }} />
+            </Box>
+            <Box>
+              {/* Brand Name with gradient text */}
+              <Typography
+                variant="h6"
                 sx={{
-                  mb: 0.5,
-                  borderRadius: BORDER_RADIUS.md,
-                  // Active state: gradient background with white text
-                  ...(active && SIDEBAR_STYLES.menuItemActive),
-                  // Inactive state: transparent background
-                  bgcolor: active ? undefined : 'transparent',
-                  color: active ? BRAND_COLORS.white : BRAND_COLORS.slate700,
-                  fontWeight: active ? 600 : 500,
-                  '&:hover': {
-                    // Hover on active: slightly darker gradient
-                    ...(active ? {
-                      background: BRAND_COLORS.primaryGradientHover,
-                    } : {
-                      // Hover on inactive: light blue background with slide effect
-                      ...SIDEBAR_STYLES.menuItemHover,
-                      transform: 'translateX(4px)',
-                    }),
-                  },
-                  transition: 'all 0.3s ease',
+                  ...SIDEBAR_STYLES.logo,
+                  fontSize: '1.1rem',
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontWeight: active ? 600 : 500,
-                    fontSize: '0.95rem'
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
+                MyCampusRide
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: BRAND_COLORS.slate600,
+                  fontWeight: 500,
+                }}
+              >
+                Student Portal
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
 
-      {/* User Profile Section at bottom with brand styling */}
+        {/* Navigation Menu Items with brand styling */}
+        <List sx={{ px: 2, pt: 2 }}>
+          {menuItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <ListItem key={item.path} disablePadding>
+                <ListItemButton
+                  onClick={() => handleMenuItemClick(item.path)}
+                  sx={{
+                    mb: 0.5,
+                    borderRadius: BORDER_RADIUS.md,
+                    // Active state: gradient background with white text
+                    ...(active && SIDEBAR_STYLES.menuItemActive),
+                    // Inactive state: transparent background
+                    bgcolor: active ? undefined : 'transparent',
+                    color: active ? BRAND_COLORS.white : BRAND_COLORS.slate700,
+                    fontWeight: active ? 600 : 500,
+                    '&:hover': {
+                      // Hover on active: slightly darker gradient
+                      ...(active ? {
+                        background: BRAND_COLORS.primaryGradientHover,
+                      } : {
+                        // Hover on inactive: light blue background with slide effect
+                        ...SIDEBAR_STYLES.menuItemHover,
+                        transform: 'translateX(4px)',
+                      }),
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: active ? 600 : 500,
+                      fontSize: '0.95rem'
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Box>
+
+      {/* User Profile Section at bottom with brand styling - Fixed at bottom of flex */}
       <Box sx={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         p: 2,
         borderTop: `1px solid ${BRAND_COLORS.slate300}`,
         bgcolor: BRAND_COLORS.slate100,
@@ -220,7 +224,7 @@ const StudentSidebar = ({ user, logout, navigate, mobileOpen, handleDrawerToggle
           </IconButton>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 
   return (

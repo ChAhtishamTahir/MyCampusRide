@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { authService, socketService } from '../services';
 
-import { toast } from 'react-toastify';
+import { toast } from '../utils/toast';
 
 // Initial state
 const initialState = {

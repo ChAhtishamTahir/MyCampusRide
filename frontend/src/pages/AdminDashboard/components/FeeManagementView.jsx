@@ -6,8 +6,10 @@ import {
   Select, MenuItem, FormControl, InputLabel, Snackbar, Alert as MuiAlert
 } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
-import { Payment, Edit } from '@mui/icons-material';
+import { Payment, Edit, FilterList, PersonOff, CheckCircleOutline, ErrorOutline, Warning } from '@mui/icons-material';
 import { userService } from '../../../services';
+import { BRAND_COLORS, BUTTON_STYLES, BORDER_RADIUS } from '../../../styles/brandStyles';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 
 const FeeManagementView = () => {
   const [users, setUsers] = useState([]);
@@ -16,7 +18,11 @@ const FeeManagementView = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [openFeeStatusDialog, setOpenFeeStatusDialog] = useState(false);
   const [feeStatus, setFeeStatus] = useState('pending');
+  const [unpaidOnly, setUnpaidOnly] = useState(false);
+  const [isDisplacing, setIsDisplacing] = useState(false);
   const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
+  const [openMarkDefaultersConfirm, setOpenMarkDefaultersConfirm] = useState(false);
+  const [defaultersToMarkCount, setDefaultersToMarkCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -44,6 +50,7 @@ const FeeManagementView = () => {
       case 'paid': return 'Paid';
       case 'partially_paid': return 'Partially Paid';
       case 'pending': return 'Pending';
+      case 'defaulter': return 'Defaulter';
       default: return status;
     }
   };
@@ -72,8 +79,36 @@ const FeeManagementView = () => {
     }
   };
 
+
+  const handleMarkDefaulters = async () => {
+    const studentsToMark = filteredStudents.filter(s => s.feeStatus === 'partially_paid');
+    if (studentsToMark.length === 0) {
+      showSnack('No partially paid students found to mark as defaulters', 'info');
+      return;
+    }
+
+    setDefaultersToMarkCount(studentsToMark.length);
+    setOpenMarkDefaultersConfirm(true);
+  };
+
+  const confirmMarkDefaulters = async () => {
+    try {
+      setOpenMarkDefaultersConfirm(false);
+      setIsDisplacing(true);
+      await userService.markFeeDefaulters();
+      showSnack(`Successfully updated students and unassigned them from buses`);
+      loadData();
+    } catch (error) {
+      console.error('Error marking defaulters:', error);
+      showSnack('Error marking defaulters. Please try again.', 'error');
+    } finally {
+      setIsDisplacing(false);
+    }
+  };
+
   const filteredStudents = users
     .filter(u => u.role === 'student')
+    .filter(u => !unpaidOnly || u.feeStatus !== 'paid')
     .filter(u => !feeSearchQuery || u.studentId?.toLowerCase().includes(feeSearchQuery.toLowerCase()));
 
   return (
@@ -82,17 +117,60 @@ const FeeManagementView = () => {
         <Card>
           <CardContent sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-              <Typography variant="h6">Fee Management</Typography>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: BRAND_COLORS.slate900 }}>
+                  Fee Management
+                </Typography>
+                <Button
+                  size="small"
+                  variant={unpaidOnly ? "contained" : "outlined"}
+                  startIcon={<FilterList />}
+                  onClick={() => setUnpaidOnly(!unpaidOnly)}
+                  sx={{
+                    borderRadius: BORDER_RADIUS.md,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    ...(unpaidOnly ? {
+                      bgcolor: BRAND_COLORS.errorRed,
+                      '&:hover': { bgcolor: '#dc2626' }
+                    } : {
+                      color: BRAND_COLORS.slate700,
+                      borderColor: BRAND_COLORS.slate300
+                    })
+                  }}
+                >
+                  {unpaidOnly ? "Showing Unpaid Only" : "Filter Unpaid"}
+                </Button>
+                {unpaidOnly && filteredStudents.some(s => s.feeStatus === 'partially_paid') && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="error"
+                    startIcon={<PersonOff />}
+                    onClick={handleMarkDefaulters}
+                    disabled={isDisplacing}
+                    sx={{ borderRadius: BORDER_RADIUS.md, textTransform: 'none', fontWeight: 600 }}
+                  >
+                    Mark Defaulters
+                  </Button>
+                )}
+              </Box>
               <Box
                 component="input"
-                placeholder="Search by Student ID"
+                placeholder="Search by Student ID..."
                 value={feeSearchQuery}
                 onChange={(e) => setFeeSearchQuery(e.target.value)}
                 sx={{
-                  px: 2, py: 1, borderRadius: 2,
-                  border: '1px solid #ddd', outline: 'none',
-                  fontSize: '0.875rem', minWidth: 250,
-                  '&:focus': { borderColor: '#0ea5e9' }
+                  px: 2, py: 1, borderRadius: BORDER_RADIUS.md,
+                  border: `1px solid ${BRAND_COLORS.slate300}`,
+                  outline: 'none',
+                  fontSize: '0.875rem',
+                  minWidth: 280,
+                  transition: 'all 0.3s ease',
+                  '&:focus': {
+                    borderColor: BRAND_COLORS.skyBlue,
+                    boxShadow: `0 0 0 2px rgba(14, 165, 233, 0.1)`
+                  }
                 }}
               />
             </Box>
@@ -127,21 +205,28 @@ const FeeManagementView = () => {
                           size="small"
                           color={
                             student.feeStatus === 'paid' ? 'success' :
-                              student.feeStatus === 'partially_paid' ? 'warning' : 'default'
+                              student.feeStatus === 'partially_paid' ? 'warning' :
+                                student.feeStatus === 'defaulter' ? 'error' : 'default'
                           }
                         />
                       </TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Update Fee Status">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => openDialog(student)}
-                            sx={{ bgcolor: 'rgba(14, 165, 233, 0.1)', '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.2)' } }}
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Box display="flex" justifyContent="flex-end" gap={1}>
+                          <Tooltip title="Update Fee Status">
+                            <IconButton
+                              size="small"
+                              onClick={() => openDialog(student)}
+                              sx={{
+                                color: BRAND_COLORS.skyBlue,
+                                bgcolor: 'rgba(14, 165, 233, 0.08)',
+                                '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.15)' }
+                              }}
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -159,6 +244,7 @@ const FeeManagementView = () => {
         </Card>
       </Grid>
 
+
       {/* Fee Status Dialog — simple, fee-only */}
       <Dialog open={openFeeStatusDialog} onClose={closeDialog} maxWidth="xs" fullWidth>
         <DialogTitle>
@@ -173,18 +259,47 @@ const FeeManagementView = () => {
                 label="Fee Status"
                 onChange={(e) => setFeeStatus(e.target.value)}
               >
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="partially_paid">Partially Paid</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
+                <MenuItem value="pending">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <ErrorOutline fontSize="small" color="error" /> Pending
+                  </Box>
+                </MenuItem>
+                <MenuItem value="partially_paid">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Warning fontSize="small" sx={{ color: '#f59e0b' }} /> Partially Paid
+                  </Box>
+                </MenuItem>
+                <MenuItem value="paid">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <CheckCircleOutline fontSize="small" color="success" /> Paid
+                  </Box>
+                </MenuItem>
+                <MenuItem value="defaulter">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <PersonOff fontSize="small" color="error" /> Defaulter
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>Update</Button>
+          <Button variant="contained" onClick={handleSubmit} sx={BUTTON_STYLES.primary}>Update</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Bulk Mark Defaulters Confirmation */}
+      <ConfirmDialog
+        open={openMarkDefaultersConfirm}
+        title="Mark Fee Defaulters"
+        message={`Are you sure you want to mark all ${defaultersToMarkCount} partially paid students as defaulters? They will be unassigned from their buses and their transport cards will be disabled.`}
+        confirmText="Mark as Defaulter"
+        variant="danger"
+        onConfirm={confirmMarkDefaulters}
+        onCancel={() => setOpenMarkDefaultersConfirm(false)}
+        loading={isDisplacing}
+      />
 
       {/* Snackbar */}
       <Snackbar

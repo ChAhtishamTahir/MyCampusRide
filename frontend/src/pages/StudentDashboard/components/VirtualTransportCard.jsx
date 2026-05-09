@@ -50,6 +50,9 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
   } else if (feeStatus === 'partially_paid') {
     paidAmount = monthlyFee * 0.5;
     dueAmount = monthlyFee * 0.5;
+  } else if (feeStatus === 'defaulter') {
+    paidAmount = monthlyFee * 0.5; // Assuming they paid half before becoming defaulter
+    dueAmount = monthlyFee * 0.5;
   }
 
   const feeInfo = {
@@ -103,7 +106,7 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
             boxShadow: SHADOWS.md,
           }}
         >
-          {downloading ? 'Generating PDF...' : 'Download Transport Card'}
+          {downloading ? 'Generating PDF...' : feeStatus === 'defaulter' ? 'Card Disabled' : 'Download Transport Card'}
         </Button>
       </Box>
 
@@ -116,11 +119,45 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
           mx: 'auto',
           boxShadow: SHADOWS.lg,
           borderRadius: BORDER_RADIUS.xl,
-          border: `1.5px solid ${BRAND_COLORS.slate300}`,
+          border: `1.5px solid ${feeStatus === 'defaulter' ? BRAND_COLORS.errorRed : BRAND_COLORS.slate300}`,
           overflow: 'hidden',
-          background: '#fff'
+          background: '#fff',
+          position: 'relative',
+          opacity: feeStatus === 'defaulter' ? 0.7 : 1,
+          filter: feeStatus === 'defaulter' ? 'grayscale(0.5)' : 'none'
         }}
       >
+        {/* Defaulter Overlay */}
+        {feeStatus === 'defaulter' && (
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(1px)'
+          }}>
+            <Box sx={{
+              transform: 'rotate(-15deg)',
+              border: `4px solid ${BRAND_COLORS.errorRed}`,
+              color: BRAND_COLORS.errorRed,
+              px: 4,
+              py: 1,
+              borderRadius: 2,
+              fontWeight: 900,
+              fontSize: '2.5rem',
+              letterSpacing: 2,
+              textShadow: '0 0 10px rgba(239, 68, 68, 0.2)'
+            }}>
+              DISABLED
+            </Box>
+          </Box>
+        )}
         {/* Header */}
         <Box sx={{
           height: 56, // Reduced height
@@ -224,14 +261,14 @@ const VirtualTransportCard = ({ user, assignedBus, assignedRoute }) => {
                     Fee Information
                   </Typography>
                   <Chip
-                    label={feeStatus === 'paid' ? 'PAID' : feeStatus === 'partially_paid' ? 'PARTIAL' : 'PENDING'}
+                    label={feeStatus === 'paid' ? 'PAID' : feeStatus === 'partially_paid' ? 'PARTIAL' : feeStatus === 'defaulter' ? 'DEFAULTER' : 'PENDING'}
                     size="small"
                     sx={{
                       height: 18,
                       fontSize: '0.65rem',
                       bgcolor: feeStatus === 'paid' ? BRAND_COLORS.successGreen :
                         feeStatus === 'partially_paid' ? BRAND_COLORS.warningOrange :
-                          BRAND_COLORS.errorRed,
+                          feeStatus === 'defaulter' ? BRAND_COLORS.errorRed : BRAND_COLORS.errorRed,
                       color: BRAND_COLORS.white,
                       fontWeight: 800,
                       borderRadius: 1,

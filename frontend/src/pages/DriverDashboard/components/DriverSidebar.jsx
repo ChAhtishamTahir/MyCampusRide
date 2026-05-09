@@ -118,68 +118,71 @@ const DriverSidebar = ({ user, logout, navigate, mobileOpen, handleDrawerToggle 
         </Box>
       </Box>
 
-      {/* Navigation Menu */}
-      <List sx={{ px: 2, pt: 2, flex: 1 }}>
-        {menuItems.map((item) => {
-          const active = isActive(item.path);
-          return (
-            <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => handleMenuItemClick(item.path)}
-                sx={{
-                  borderRadius: BORDER_RADIUS.md,
-                  py: 1.2,
-                  px: 2,
-                  ...(active ? {
-                    background: BRAND_COLORS.primaryGradient,
-                    color: BRAND_COLORS.white,
-                    boxShadow: SHADOWS.buttonDefault,
-                    '&:hover': {
-                      background: BRAND_COLORS.primaryGradientHover,
-                    },
-                  } : {
-                    color: BRAND_COLORS.slate700,
-                    '&:hover': {
-                      bgcolor: 'rgba(14, 165, 233, 0.08)',
-                      color: BRAND_COLORS.skyBlue,
-                    },
-                  }),
-                  transition: 'all 0.25s ease',
-                }}
-              >
-                <ListItemIcon sx={{
-                  minWidth: 40,
-                  color: 'inherit',
-                  transition: 'all 0.25s ease',
-                }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontWeight: active ? TYPOGRAPHY.weights.bold : TYPOGRAPHY.weights.semibold,
-                    fontSize: '0.95rem',
+      {/* Scrollable Container for Menu Items */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        {/* Navigation Menu */}
+        <List sx={{ px: 2, pt: 2 }}>
+          {menuItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => handleMenuItemClick(item.path)}
+                  sx={{
+                    borderRadius: BORDER_RADIUS.md,
+                    py: 1.2,
+                    px: 2,
+                    ...(active ? {
+                      background: BRAND_COLORS.primaryGradient,
+                      color: BRAND_COLORS.white,
+                      boxShadow: SHADOWS.buttonDefault,
+                      '&:hover': {
+                        background: BRAND_COLORS.primaryGradientHover,
+                      },
+                    } : {
+                      color: BRAND_COLORS.slate700,
+                      '&:hover': {
+                        bgcolor: 'rgba(14, 165, 233, 0.08)',
+                        color: BRAND_COLORS.skyBlue,
+                      },
+                    }),
+                    transition: 'all 0.25s ease',
                   }}
-                />
-                {/* Active slide indicator */}
-                {active && (
-                  <Box sx={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 4,
-                    height: 24,
-                    borderRadius: '0 4px 4px 0',
-                    background: BRAND_COLORS.white,
-                    opacity: 0.6,
-                  }} />
-                )}
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
+                >
+                  <ListItemIcon sx={{
+                    minWidth: 40,
+                    color: 'inherit',
+                    transition: 'all 0.25s ease',
+                  }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontWeight: active ? TYPOGRAPHY.weights.bold : TYPOGRAPHY.weights.semibold,
+                      fontSize: '0.95rem',
+                    }}
+                  />
+                  {/* Active slide indicator */}
+                  {active && (
+                    <Box sx={{
+                      position: 'absolute',
+                      left: 0,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: 24,
+                      borderRadius: '0 4px 4px 0',
+                      background: BRAND_COLORS.white,
+                      opacity: 0.6,
+                    }} />
+                  )}
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Box>
 
       {/* User Profile Section */}
       <Box sx={{

@@ -179,7 +179,7 @@ const createUser = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/:id
 // @access  Private/Admin
 const updateUser = asyncHandler(async (req, res) => {
-  const { name, email, phone, status, feeStatus, assignedRoute, assignedBus } = req.body;
+  const { name, email, phone, status, feeStatus, assignedRoute, assignedBus, isDisplaced, password } = req.body;
 
   // Find the existing user to compare changes
   const user = await User.findById(req.params.id)
@@ -296,7 +296,11 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 
   // Build the update object
-  const updateData = { name, email, phone, status, feeStatus, assignedRoute, assignedBus };
+  const updateData = { name, email, phone, status, feeStatus, assignedRoute, assignedBus, isDisplaced };
+
+  if (password) {
+    updateData.password = password;
+  }
 
   if (shouldClearDisplaced) {
     updateData.isDisplaced = false;
@@ -324,21 +328,48 @@ const updateUser = asyncHandler(async (req, res) => {
     updateData.feeUpdatedBy = adminId;
   }
 
-  // Update user with all changes including automatic fee notes
-  const updatedUser = await User.findByIdAndUpdate(
-    req.params.id,
-    updateData,
-    { new: true, runValidators: true }
-  ).populate({
-    path: 'assignedBus',
-    select: 'busNumber model year',
-    populate: [
-      { path: 'driverId', select: 'name' },
-      { path: 'routeId', select: 'routeName routeNo' }
-    ]
-  })
-    .populate('assignedRoute', 'routeName routeNo')
-    .populate('feeUpdatedBy', 'name email');
+  // If password is being updated, we MUST use .save() to trigger the pre-save hashing hook
+  // findByIdAndUpdate bypasses middleware
+  let updatedUser;
+  if (password) {
+    // Apply updates to the user object
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] !== undefined) {
+        user[key] = updateData[key];
+      }
+    });
+
+    await user.save();
+
+    // Re-populate for the response
+    updatedUser = await User.findById(user._id)
+      .populate({
+        path: 'assignedBus',
+        select: 'busNumber model year',
+        populate: [
+          { path: 'driverId', select: 'name' },
+          { path: 'routeId', select: 'routeName routeNo' }
+        ]
+      })
+      .populate('assignedRoute', 'routeName routeNo')
+      .populate('feeUpdatedBy', 'name email');
+  } else {
+    // Update user with all changes including automatic fee notes
+    updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate({
+      path: 'assignedBus',
+      select: 'busNumber model year',
+      populate: [
+        { path: 'driverId', select: 'name' },
+        { path: 'routeId', select: 'routeName routeNo' }
+      ]
+    })
+      .populate('assignedRoute', 'routeName routeNo')
+      .populate('feeUpdatedBy', 'name email');
+  }
 
   res.json({
     success: true,
@@ -579,6 +610,65 @@ const getDriverLicense = asyncHandler(async (req, res) => {
   res.sendFile(filePath);
 });
 
+// @desc    Mark partially paid students as defaulters and unassign from buses
+// @route   PUT /api/users/mark-defaulters
+// @access  Private/Admin
+const markFeeDefaulters = asyncHandler(async (req, res) => {
+  const adminName = req.user.name;
+  const adminId = req.user._id;
+
+  const timestamp = new Date().toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  // Find partially paid students
+  const students = await User.find({
+    role: 'student',
+    feeStatus: 'partially_paid'
+  });
+
+  if (students.length === 0) {
+    return res.json({
+      success: true,
+      message: 'No partially paid students found to mark as defaulters',
+      count: 0
+    });
+  }
+
+  let count = 0;
+  for (const student of students) {
+    const oldBusId = student.assignedBus;
+
+    // Update student status and unassign bus
+    student.feeStatus = 'defaulter';
+    student.assignedBus = null;
+
+    const note = `Marked as Defaulter and unassigned from bus by ${adminName} on ${timestamp} due to unpaid remaining fee.`;
+    student.feeNotes = student.feeNotes ? `${student.feeNotes}\n${note}` : note;
+    student.feeUpdatedAt = new Date();
+    student.feeUpdatedBy = adminId;
+
+    await student.save();
+
+    // If there was a bus assigned, increment its capacity
+    if (oldBusId) {
+      await Bus.findByIdAndUpdate(oldBusId, { $inc: { capacity: 1 } });
+    }
+    count++;
+  }
+
+  res.json({
+    success: true,
+    message: `Successfully marked ${count} students as defaulters and unassigned them from buses`,
+    count
+  });
+});
+
 module.exports = {
   getUsers,
   getUser,
@@ -589,5 +679,6 @@ module.exports = {
   rejectDriver,
   getPendingDrivers,
   getUserStats,
-  getDriverLicense
+  getDriverLicense,
+  markFeeDefaulters
 };

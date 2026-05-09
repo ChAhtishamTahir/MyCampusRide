@@ -62,7 +62,7 @@ const userSchema = new mongoose.Schema({
   },
   feeStatus: {
     type: String,
-    enum: ['paid', 'partially_paid', 'pending'],
+    enum: ['paid', 'partially_paid', 'pending', 'defaulter'],
     default: 'pending',
     required: function () {
       return this.role === 'student';

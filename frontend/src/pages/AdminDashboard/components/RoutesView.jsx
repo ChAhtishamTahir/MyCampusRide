@@ -9,6 +9,7 @@ import {
   Route as RouteIcon, Add, Edit, Delete, LocationOn, AccessTime
 } from '@mui/icons-material';
 import { routeService, busService } from '../../../services';
+import ConfirmDialog from '../../../components/ConfirmDialog';
 
 const RoutesView = () => {
   const [routes, setRoutes] = useState([]);
@@ -445,16 +446,15 @@ const RoutesView = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={confirmDialog.open} onClose={() => setConfirmDialog({ open: false, id: null })}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent dividers>
-          <Typography>Are you sure you want to delete this route? This action cannot be undone.</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialog({ open: false, id: null })}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleDeleteRoute}>Delete</Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title="Delete Route"
+        message="Are you sure you want to delete this route? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={handleDeleteRoute}
+        onCancel={() => setConfirmDialog({ open: false, id: null })}
+      />
 
       {/* Snackbar */}
       <Snackbar 

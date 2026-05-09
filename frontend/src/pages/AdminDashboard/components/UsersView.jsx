@@ -9,7 +9,7 @@ import {
 import {
   Add, Edit, Delete, CheckCircle, Cancel, AdminPanelSettings,
   School, DirectionsBus, Search, FilterList, Refresh, PictureAsPdf,
-  MoreVert, Close, Person, Email, Clear, People, Visibility
+  MoreVert, Close, Person, Email, Clear, People, Visibility, VisibilityOff
 } from '@mui/icons-material';
 import { userService, busService, routeService } from '../../../services';
 import { toast } from '../../../utils/toast';
@@ -34,6 +34,7 @@ const UsersView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -144,6 +145,7 @@ const UsersView = () => {
     setOpenDialog(false);
     setSelectedUser(null);
     setFormData({});
+    setShowPassword(false);
   };
 
   const validateStudentId = (id) => {
@@ -737,15 +739,25 @@ const UsersView = () => {
               </FormControl>
             )}
 
-            {dialogMode === 'add' && (
-              <TextField
-                label="Password"
-                type="password"
-                value={formData.password || ''}
-                onChange={(e) => handleFormChange('password', e.target.value)}
-                required
-              />
-            )}
+            <TextField
+              label={dialogMode === 'add' ? "Password" : "New Password (leave blank to keep current)"}
+              type={showPassword ? "text" : "password"}
+              value={formData.password || ''}
+              onChange={(e) => handleFormChange('password', e.target.value)}
+              required={dialogMode === 'add'}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Box>
         </DialogContent>
 

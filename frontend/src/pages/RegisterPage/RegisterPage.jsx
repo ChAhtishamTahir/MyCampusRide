@@ -233,7 +233,6 @@ const RegisterPage = () => {
       } else {
         const errorMsg = result.error || 'Registration failed. Please try again.';
         setError(errorMsg);
-        toast.error(errorMsg);
       }
     } catch (err) {
       let errorMsg;
@@ -243,7 +242,6 @@ const RegisterPage = () => {
         errorMsg = err.response?.data?.message || 'Registration failed. Please try again.';
       }
       setError(errorMsg);
-      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

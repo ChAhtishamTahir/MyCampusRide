@@ -36,7 +36,7 @@ import {
   SignalCellularAlt,
   SignalCellularOff
 } from '@mui/icons-material';
-import { trackingService } from '../../../services';
+import { trackingService, busService } from '../../../services';
 import socketService from '../../../services/socketService';
 import RealTimeBusMap from '../../../components/RealTimeBusMap';
 import {
@@ -106,13 +106,22 @@ const AdminLiveTrackingView = () => {
       setLoading(true);
       setError(null);
       
-      const response = await trackingService.getActiveBusLocations();
-      const locations = response.data?.data || [];
+      const [trackingRes, statsRes] = await Promise.all([
+        trackingService.getActiveBusLocations(),
+        busService.getBusStats()
+      ]);
+      
+      const locations = trackingRes.data?.data || [];
+      const fleetStats = statsRes.data?.data || { total: 0, onTrip: 0, active: 0 };
       
       setBusLocations(locations);
-      calculateStats(locations);
+      setStats({
+        total: fleetStats.total,
+        onTrip: fleetStats.onTrip,
+        available: fleetStats.total - fleetStats.onTrip
+      });
     } catch (err) {
-      console.error('Failed to load bus locations:', err);
+      console.error('Failed to load bus tracking data:', err);
       setError('Failed to load bus tracking data');
       setBusLocations([]);
     } finally {
@@ -135,7 +144,6 @@ const AdminLiveTrackingView = () => {
         return bus;
       });
       
-      calculateStats(updatedLocations);
       return updatedLocations;
     });
   };
@@ -151,14 +159,6 @@ const AdminLiveTrackingView = () => {
     setNotifications(prev => [newNotification, ...prev].slice(0, 10)); // Keep last 10
   };
 
-  // Calculate statistics
-  const calculateStats = (locations) => {
-    const total = locations.length;
-    const onTrip = locations.filter(bus => bus.isOnTrip).length;
-    const available = locations.filter(bus => !bus.isOnTrip).length;
-    
-    setStats({ total, onTrip, available });
-  };
 
   // Filter buses based on selection
   const filteredBuses = busLocations.filter(bus => {
