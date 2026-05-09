@@ -111,6 +111,26 @@ const register = asyncHandler(async (req, res) => {
     }
   }
 
+  // Password validation
+  if (!password || password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must be at least 6 characters long'
+    });
+  }
+  if (!/[A-Z]/.test(password)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must contain at least one uppercase letter'
+    });
+  }
+  if (!/[0-9]/.test(password)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must contain at least one number'
+    });
+  }
+
   // Prepare user data
   const userData = {
     name,
@@ -332,6 +352,26 @@ const changePassword = asyncHandler(async (req, res) => {
     return res.status(404).json({
       success: false,
       message: 'User not found'
+    });
+  }
+
+  // Validate new password
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'New password must be at least 6 characters long'
+    });
+  }
+  if (!/[A-Z]/.test(newPassword)) {
+    return res.status(400).json({
+      success: false,
+      message: 'New password must contain at least one uppercase letter'
+    });
+  }
+  if (!/[0-9]/.test(newPassword)) {
+    return res.status(400).json({
+      success: false,
+      message: 'New password must contain at least one number'
     });
   }
 

@@ -38,6 +38,22 @@ export const validatePassword = (password) => {
     };
   }
 
+  if (!/[A-Z]/.test(password)) {
+    return {
+      valid: false,
+      strength: 'weak',
+      error: 'Password must contain at least one uppercase letter'
+    };
+  }
+
+  if (!/[0-9]/.test(password)) {
+    return {
+      valid: false,
+      strength: 'weak',
+      error: 'Password must contain at least one number'
+    };
+  }
+
   let strength = 'weak';
   if (password.length >= 12) {
     strength = 'strong';

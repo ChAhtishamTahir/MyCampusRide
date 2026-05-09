@@ -89,8 +89,12 @@ const RegisterPage = () => {
     if (touched.name && !formData.name) errors.name = 'Name is required';
     if (touched.email) errors.email = validateEmail(formData.email);
     if (touched.phone) errors.phone = validatePhone(formData.phone);
-    if (touched.password && !formData.password) errors.password = 'Password is required';
-    else if (touched.password && formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
+    if (touched.password) {
+      if (!formData.password) errors.password = 'Password is required';
+      else if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
+      else if (!/[A-Z]/.test(formData.password)) errors.password = 'Password must contain at least one uppercase letter';
+      else if (!/[0-9]/.test(formData.password)) errors.password = 'Password must contain at least one number';
+    }
     if (touched.confirmPassword && formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
@@ -157,6 +161,20 @@ const RegisterPage = () => {
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
       toast.error('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[A-Z]/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter');
+      toast.error('Password must contain at least one uppercase letter');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[0-9]/.test(formData.password)) {
+      setError('Password must contain at least one number');
+      toast.error('Password must contain at least one number');
       setLoading(false);
       return;
     }

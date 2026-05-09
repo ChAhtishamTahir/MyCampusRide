@@ -63,10 +63,16 @@ const PasswordChangeForm = () => {
     if (touched.currentPassword && !formData.currentPassword) {
       errors.currentPassword = 'Current password is required';
     }
-    if (touched.newPassword && !formData.newPassword) {
-      errors.newPassword = 'New password is required';
-    } else if (touched.newPassword && formData.newPassword.length < 6) {
-      errors.newPassword = 'Password must be at least 6 characters';
+    if (touched.newPassword) {
+      if (!formData.newPassword) {
+        errors.newPassword = 'New password is required';
+      } else if (formData.newPassword.length < 6) {
+        errors.newPassword = 'Password must be at least 6 characters';
+      } else if (!/[A-Z]/.test(formData.newPassword)) {
+        errors.newPassword = 'Password must contain at least one uppercase letter';
+      } else if (!/[0-9]/.test(formData.newPassword)) {
+        errors.newPassword = 'Password must contain at least one number';
+      }
     }
     if (touched.confirmPassword && formData.newPassword !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
@@ -112,6 +118,18 @@ const PasswordChangeForm = () => {
 
     if (formData.newPassword.length < 6) {
       toast.error('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[A-Z]/.test(formData.newPassword)) {
+      toast.error('Password must contain at least one uppercase letter');
+      setLoading(false);
+      return;
+    }
+
+    if (!/[0-9]/.test(formData.newPassword)) {
+      toast.error('Password must contain at least one number');
       setLoading(false);
       return;
     }
