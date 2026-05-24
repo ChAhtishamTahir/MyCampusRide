@@ -3,14 +3,18 @@ const router = express.Router();
 const {
   register,
   login,
+  logout
+} = require('../controllers/authController');
+const {
+  verifyEmail,
+  resendVerificationEmail
+} = require('../controllers/emailVerificationController');
+const {
   getMe,
   updateProfile,
   changePassword,
-  selectRoute,
-  logout,
-  verifyEmail,
-  resendVerificationEmail
-} = require('../controllers/authController');
+  selectRoute
+} = require('../controllers/profileController');
 const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('../middleware/fileUpload');
 
